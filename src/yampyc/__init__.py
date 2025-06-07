@@ -1,22 +1,21 @@
-"""
-yampyc: Пакет для управления конфигурацией YAMPYC
+"""yampyc: configuration management package.
 
-Этот пакет предоставляет классы для работы с конфигурациями:
-- Yampyc: Класс для работы с конфигурацией, поддерживающий различные источники данных.
-- YampycFactory: Фабрика для создания и управления синглтонами конфигурации с использованием опциональных ключей.
+This package provides classes for working with configuration:
+- ``Yampyc`` – the main configuration class supporting multiple sources.
+- ``YampycFactory`` – a factory for creating and managing configuration singletons.
 
-Пример использования:
+Example usage:
     from yampyc import Yampyc, YampycFactory
 
-    # Создание конфигурации и загрузка данных из файлов
+    # Create configuration and load data from files
     config = Yampyc()
     config.add_yaml_source('config.yaml')
     config.add_env_source('.env')
 
-    # Установка конфигурации в фабрику
+    # Register configuration in the factory
     YampycFactory.set_config(config)
 
-    # Получение конфигурации из фабрики
+    # Retrieve configuration from the factory
     config = YampycFactory.get_config()
     print(config.get('some_key'))
 """

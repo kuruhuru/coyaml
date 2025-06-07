@@ -12,28 +12,28 @@ from yampyc import (
 
 
 class DatabaseConfig(BaseModel):
-    """Модель конфигурации базы данных."""
+    """Database configuration model."""
 
     url: str
 
 
 class DebugConfig(BaseModel):
-    """Модель конфигурации отладки, содержащая конфигурацию базы данных."""
+    """Debug configuration model containing database settings."""
 
     db: DatabaseConfig
 
 
 class AppConfig(BaseModel):
-    """Основная модель конфигурации приложения, содержащая отладку и LLM параметры."""
+    """Main application configuration model with debug and LLM parameters."""
 
     debug: DebugConfig
     llm: str
 
 
 def test_loading_yaml_and_env_sources() -> None:
-    """
-    Тест загрузки данных из YAML и .env файлов.
-    Проверяет корректность получения данных из разных источников.
+    """Test loading data from YAML and .env files.
+
+    Ensures data from different sources is read correctly.
     """
     config = Yampyc()
     config.add_yaml_source('tests/config/config.yaml')
@@ -52,70 +52,58 @@ def test_loading_yaml_and_env_sources() -> None:
 
 
 def test_converting_to_pydantic_model() -> None:
-    """
-    Тест конвертации данных конфигурации в Pydantic-модели.
-    Проверяет, что конфигурация правильно конвертируется в Pydantic-модель.
-    """
+    """Test converting configuration data to Pydantic models."""
     config = Yampyc()
     config.add_yaml_source('tests/config/config.yaml')
 
-    # Конвертация в Pydantic модель
+    # Convert to a Pydantic model
     debug: DebugConfig = config.debug.to(DebugConfig)
-    assert debug.db.url == 'postgres://user:password@localhost/dbname', 'Неверный URL базы данных.'
+    assert debug.db.url == 'postgres://user:password@localhost/dbname', 'Invalid database URL.'
 
-    # Проверка другой модели
+    # Check conversion to another model
     app_config: AppConfig = config.to(AppConfig)
-    assert app_config.llm == 'path/to/llm/config', 'Неверная конфигурация LLM.'
+    assert app_config.llm == 'path/to/llm/config', 'Incorrect LLM configuration.'
 
 
 def test_assignment_operations() -> None:
-    """
-    Тест операций присваивания новых параметров в конфигурации.
-    Проверяет присваивание значений через атрибуты и точечную нотацию.
-    """
+    """Test assigning new parameters via attributes and dot notation."""
     config = Yampyc()
     config.add_yaml_source('tests/config/config.yaml')
 
-    # Пример присваивания значения параметру
+    # Example of assigning a parameter value
     config.index = 10
-    assert config.index == 10, "Ошибка присваивания значения 'index'."
+    assert config.index == 10, "Failed to assign value to 'index'."
 
-    # Присваивание новых параметров
+    # Assigning new parameters
     config.new_param = 'value'
-    assert config.new_param == 'value', "Ошибка присваивания нового параметра 'new_param'."
+    assert config.new_param == 'value', "Failed to assign new parameter 'new_param'."
 
-    # Пример работы со словарями и списками
+    # Example working with dictionaries and lists
     config.new_param_dict = {'key': 'value'}
-    assert config.new_param_dict == {'key': 'value'}, 'Ошибка присваивания словаря.'
+    assert config.new_param_dict == {'key': 'value'}, 'Failed to assign dictionary.'
 
     config.new_param_list = [{'key1': 'value1'}, {'key2': 'value2'}]
-    assert isinstance(config.new_param_list[0], YampycNode), 'Ошибка присваивания списка словарей.'
-    assert config.new_param_list[0]['key1'] == 'value1', 'Ошибка значения в списке словарей.'
+    assert isinstance(config.new_param_list[0], YampycNode), 'Failed to assign list of dictionaries.'
+    assert config.new_param_list[0]['key1'] == 'value1', 'Incorrect value in list of dictionaries.'
 
 
 def test_dot_notation_access() -> None:
-    """
-    Тест доступа к конфигурационным параметрам через точечную нотацию.
-    Проверяет как чтение, так и запись значений.
-    """
+    """Test accessing configuration parameters via dot notation."""
     config = Yampyc()
     config.add_yaml_source('tests/config/config.yaml')
 
-    # Проверка чтения через точечную нотацию
+    # Check reading via dot notation
     assert (
         config['debug.db.url'] == 'postgres://user:password@localhost/dbname'
-    ), 'Ошибка чтения через точечную нотацию.'
+    ), 'Failed reading via dot notation.'
 
-    # Проверка записи через точечную нотацию
+    # Check writing via dot notation
     config['debug.db.url'] = 'sqlite:///yampyc.db'
-    assert config['debug.db.url'] == 'sqlite:///yampyc.db', 'Ошибка записи через точечную нотацию.'
+    assert config['debug.db.url'] == 'sqlite:///yampyc.db', 'Failed writing via dot notation.'
 
 
 def test_invalid_key_access() -> None:
-    """
-    Тест обработки некорректных ключей.
-    Проверяет вызов исключения при обращении к несуществующему ключу.
-    """
+    """Ensure a ``KeyError`` is raised for invalid keys."""
     config = Yampyc()
     config.add_yaml_source('tests/config/config.yaml')
 
@@ -124,48 +112,39 @@ def test_invalid_key_access() -> None:
     except KeyError:
         pass
     else:
-        raise AssertionError('Ожидалось исключение KeyError при доступе к несуществующему ключу.')
+        raise AssertionError('Expected KeyError when accessing a non-existent key.')
 
 
 def test_empty_config() -> None:
-    """
-    Тест работы с пустой конфигурацией.
-    Проверяет, что пустая конфигурация не вызывает ошибок при чтении и записи.
-    """
+    """Check that an empty configuration can be read and written."""
     config = Yampyc()
 
-    # Пустая конфигурация не должна иметь никаких ключей
+    # An empty configuration should have no keys
     try:
         config['any.key']
     except KeyError:
         pass
     else:
-        raise AssertionError('Ожидалось исключение KeyError при доступе к несуществующему ключу в пустой конфигурации.')
+        raise AssertionError('Expected KeyError when accessing a missing key in an empty configuration.')
 
-    # Можно добавлять новые ключи
+    # New keys can be added
     config['new.key'] = 'value'
-    assert config['new.key'] == 'value', 'Ошибка при добавлении нового ключа в пустую конфигурацию.'
+    assert config['new.key'] == 'value', 'Failed to add new key to empty configuration.'
 
 
 def test_to_method_with_string() -> None:
-    """
-    Тест метода to с передачей строкового пути к классу.
-    Проверяет корректную динамическую загрузку класса.
-    """
+    """Test ``to`` method using a dotted path to the class."""
     config = Yampyc()
     config.add_yaml_source('tests/config/config.yaml')
 
-    # Используем строковый путь для загрузки класса AppConfig
+    # Use a dotted path to load ``AppConfig``
     app_config: AppConfig = config.to('test_yampyc.AppConfig')
-    assert isinstance(app_config, AppConfig), 'Ошибка загрузки модели через строку.'
-    assert app_config.llm == 'path/to/llm/config', 'Ошибка преобразования конфигурации.'
+    assert isinstance(app_config, AppConfig), 'Failed to load model from string.'
+    assert app_config.llm == 'path/to/llm/config', 'Configuration conversion error.'
 
 
 def test_to_method_invalid_class() -> None:
-    """
-    Тест метода to с передачей некорректного пути к классу.
-    Ожидается ImportError.
-    """
+    """Expect ``ImportError`` when a module path is invalid."""
     config = Yampyc()
 
     with pytest.raises(ModuleNotFoundError):
@@ -173,10 +152,7 @@ def test_to_method_invalid_class() -> None:
 
 
 def test_to_method_invalid_attribute() -> None:
-    """
-    Тест метода to с передачей некорректного имени класса в существующем модуле.
-    Ожидается AttributeError.
-    """
+    """Expect ``AttributeError`` when class name is invalid."""
     config = Yampyc()
 
     with pytest.raises(ModuleNotFoundError):
@@ -186,59 +162,48 @@ def test_to_method_invalid_attribute() -> None:
 
 
 def test_to_method_with_class() -> None:
-    """
-    Тест метода to с передачей класса напрямую.
-    Проверяет корректное преобразование конфигурации в объект модели.
-    """
+    """Test ``to`` method when a class is passed directly."""
     config = Yampyc()
     config.add_yaml_source('tests/config/config.yaml')
 
     app_config = config.to(AppConfig)
-    assert isinstance(app_config, AppConfig), 'Ошибка преобразования в объект модели.'
-    assert app_config.llm == 'path/to/llm/config', 'Ошибка в данных модели.'
+    assert isinstance(app_config, AppConfig), 'Failed to convert to model instance.'
+    assert app_config.llm == 'path/to/llm/config', 'Model data error.'
 
 
 def test_iteration_over_keys() -> None:
-    """
-    Тест итерации по ключам в YampycNode.
-    """
+    """Test iteration over keys in ``YampycNode``."""
     config = YampycNode({'key1': 'value1', 'key2': 'value2'})
 
     keys = list(config)
-    assert keys == ['key1', 'key2'], 'Ошибка в итерации по ключам.'
+    assert keys == ['key1', 'key2'], 'Iteration over keys failed.'
 
 
 def test_iteration_over_items() -> None:
-    """
-    Тест итерации по ключам и значениям в YampycNode.
-    """
+    """Test iteration over key/value pairs in ``YampycNode``."""
     config = YampycNode({'key1': 'value1', 'key2': 'value2'})
 
     items = list(config.items())
     assert items == [
         ('key1', 'value1'),
         ('key2', 'value2'),
-    ], 'Ошибка в итерации по ключам и значениям.'
+    ], 'Iteration over items failed.'
 
 
 def test_iteration_over_values() -> None:
-    """
-    Тест итерации по значениям в YampycNode.
-    """
+    """Test iteration over values in ``YampycNode``."""
     config = YampycNode({'key1': 'value1', 'key2': 'value2'})
 
     values = list(config.values())
-    assert values == ['value1', 'value2'], 'Ошибка в итерации по значениям.'
+    assert values == ['value1', 'value2'], 'Iteration over values failed.'
 
 
 def test_parsing_env_vars_in_yaml_with_default() -> None:
-    """
-    Тест для проверки корректности замены переменных окружения в YAML файле с поддержкой значений по умолчанию.
-    """
-    # Устанавливаем переменные окружения для теста
+    """Check substitution of environment variables in YAML with defaults."""
+    # Set environment variables for the test
     os.environ['DB_USER'] = 'test_user'
 
-    # Важно, чтобы DB_PASSWORD не было установлено в окружении
+    # Ensure DB_PASSWORD is not set
     if 'DB_PASSWORD' in os.environ:
         del os.environ['DB_PASSWORD']
 
@@ -246,27 +211,25 @@ def test_parsing_env_vars_in_yaml_with_default() -> None:
     config.add_yaml_source('tests/config/config.yaml')
     config.resolve_templates()
 
-    # Проверка того, что переменные окружения подставились корректно
-    assert config['debug.db.user'] == 'test_user', "Ошибка в замене переменной окружения для 'db.user'."
+    # Verify environment variables were substituted correctly
+    assert config['debug.db.user'] == 'test_user', "Environment variable substitution failed for 'db.user'."
     assert (
         config['debug.db.password'] == 'strong:/-password'
-    ), "Ошибка в использовании значения по умолчанию для 'db.password'."
+    ), "Default value for 'db.password' was not used correctly."
 
-    # Устанавливаем значение DB_PASSWORD и проверяем ещё раз
+    # Set DB_PASSWORD and check again
     os.environ['DB_PASSWORD'] = 'real_password'  # noqa: S105
 
     config = Yampyc()
     config.add_yaml_source('tests/config/config.yaml')
     config.resolve_templates()
 
-    assert config.debug.db.password == 'real_password', "Ошибка в замене переменной окружения для 'db.password'."  # noqa: S105
+    assert config.debug.db.password == 'real_password', "Environment variable substitution failed for 'db.password'."  # noqa: S105
 
 
 def test_missing_env_var_without_default() -> None:
-    """
-    Тест для проверки обработки ситуации, когда переменная окружения не задана и значение по умолчанию не указано.
-    """
-    # Убедимся, что переменная окружения не установлена
+    """Check behaviour when an environment variable is missing and no default is given."""
+    # Ensure the environment variable is not set
     if 'DB_USER' in os.environ:
         del os.environ['DB_USER']
 
@@ -281,10 +244,8 @@ def test_missing_env_var_without_default() -> None:
 
 
 def test_template_parsing() -> None:
-    """
-    Тест для проверки корректной обработки всех типов шаблонов в конфигурации.
-    """
-    # Устанавливаем переменные окружения для теста
+    """Test processing of all template types in the configuration."""
+    # Set environment variables for the test
     os.environ['DB_USER'] = 'test_user'
     os.environ['DB_PASSWORD'] = 'test_password'  # noqa: S105
 
@@ -292,35 +253,33 @@ def test_template_parsing() -> None:
     config.add_yaml_source('tests/config/config.yaml')
     config.resolve_templates()
 
-    # Проверка замены переменных окружения
-    assert config['debug.db.user'] == 'test_user', "Ошибка в замене переменной окружения для 'debug.db.user'."
+    # Check that environment variables were replaced
+    assert config['debug.db.user'] == 'test_user', "Environment variable substitution failed for 'debug.db.user'."
     assert (
         config['debug.db.password'] == 'test_password'
-    ), "Ошибка в замене переменной окружения для 'debug.db.password'."
+    ), "Environment variable substitution failed for 'debug.db.password'."
 
-    # Проверка вставки содержимого файла
+    # Check file content insertion
     with open('tests/config/init.sql') as f:
         init_script_content = f.read()
-    assert config['debug.db.init_script'] == init_script_content, "Ошибка в вставке содержимого файла 'init.sql'."
+    assert config['debug.db.init_script'] == init_script_content, "File content insertion failed for 'init.sql'."
 
-    # Проверка вставки значения из текущей конфигурации
+    # Check insertion of a value from current configuration
     expected_db_url = f'postgresql://{config["debug.db.user"]}:{config["debug.db.password"]}@localhost:5432/app_db'
-    assert config['app.db_url'] == expected_db_url, "Ошибка в вставке значения из текущей конфигурации в 'app.db_url'."
+    assert config['app.db_url'] == expected_db_url, "Failed to insert value from current configuration into 'app.db_url'."
 
-    # Проверка загрузки внешнего YAML файла
+    # Check loading of an external YAML file
     assert (
         config['app.extra_settings.feature_flags.enable_new_feature'] is True
-    ), "Ошибка в загрузке внешнего YAML файла и чтении 'enable_new_feature'."
+    ), "Failed to load external YAML file or read 'enable_new_feature'."
     assert (
         config['app.extra_settings.feature_flags.beta_mode'] is False
-    ), "Ошибка в загрузке внешнего YAML файла и чтении 'beta_mode'."
+    ), "Failed to load external YAML file or read 'beta_mode'."
 
 
 def test_file_not_found() -> None:
-    """
-    Тест для проверки обработки ситуации, когда файл для вставки не найден.
-    """
-    # Изменяем путь к файлу на несуществующий
+    """Check handling when an included file is missing."""
+    # Use a nonexistent path
     config_content = """
     debug:
       db:
@@ -337,14 +296,12 @@ def test_file_not_found() -> None:
     ):
         config.resolve_templates()
 
-    # Удаляем временный файл
+    # Remove temporary file
     os.remove('tests/config/temp_config.yaml')
 
 
 def test_yaml_file_not_found() -> None:
-    """
-    Тест для проверки обработки ситуации, когда внешний YAML файл не найден.
-    """
+    """Check handling when an external YAML file is missing."""
     config_content = """
     app:
       extra_settings: ${{ yaml:./configs/nonexistent.yaml }}
@@ -360,14 +317,12 @@ def test_yaml_file_not_found() -> None:
     ):
         config.resolve_templates()
 
-    # Удаляем временный файл
+    # Remove temporary file
     os.remove('tests/config/temp_config.yaml')
 
 
 def test_invalid_template_action() -> None:
-    """
-    Тест для проверки обработки ситуации, когда указано неизвестное действие в шаблоне.
-    """
+    """Check handling of an unknown template action."""
     config_content = """
     app:
       invalid_template: ${{ unknown_action:some_value }}
@@ -384,14 +339,12 @@ def test_invalid_template_action() -> None:
     ):
         config.resolve_templates()
 
-    # Удаляем временный файл
+    # Remove temporary file
     os.remove('tests/config/temp_config.yaml')
 
 
 def test_recursive_template_resolution() -> None:
-    """
-    Тест для проверки рекурсивной обработки шаблонов.
-    """
+    """Test recursive template processing."""
     config_content = """
     app:
       nested_value: ${{ env:NESTED_ENV }}
@@ -407,18 +360,16 @@ def test_recursive_template_resolution() -> None:
     config.add_yaml_source('tests/config/temp_config.yaml')
     config.resolve_templates()
 
-    assert config['app.final_value'] == 'resolved_value', 'Ошибка в рекурсивной обработке шаблонов.'
+    assert config['app.final_value'] == 'resolved_value', 'Recursive template resolution failed.'
 
-    # Удаляем временный файл и переменные окружения
+    # Clean up temporary file and environment variables
     os.remove('tests/config/temp_config.yaml')
     del os.environ['NESTED_ENV']
     del os.environ['FINAL_ENV']
 
 
 def test_config_key_not_found() -> None:
-    """
-    Тест для проверки обработки ситуации, когда ключ в конфигурации не найден при использовании шаблона config.
-    """
+    """Check behaviour when a config key is missing for ``config`` template."""
     config_content = """
     app:
       missing_value: ${{ config:nonexistent.key }}
@@ -431,11 +382,11 @@ def test_config_key_not_found() -> None:
 
     with pytest.raises(
         KeyError,
-        match=r"Ключ 'nonexistent.key' не найден в конфигурации.",
+        match=r"Key 'nonexistent.key' not found in the configuration",
     ):
         config.resolve_templates()
 
-    # Удаляем временный файл
+    # Remove temporary file
     os.remove('tests/config/temp_config.yaml')
 
 
