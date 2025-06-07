@@ -1,0 +1,4 @@
+# tests/config/extra.yaml
+feature_flags:
+  enable_new_feature: true
+  beta_mode: false

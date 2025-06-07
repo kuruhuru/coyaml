@@ -1,0 +1,26 @@
+[flake8]
+max-line-length = 120
+max-arguments = 8
+max-annotation-complexity = 4
+max-cognitive-average = 10
+max-line-complexity = 16
+max-imports = 15
+
+allowed-domain-names = data
+
+ignore = S301, S311,
+    S403,
+    WPS100,
+    WPS226,
+    WPS237,
+    WPS305, WPS306, WPS317,
+    WPS410, WPS412, WPS440,
+    WPS602, WPS605,
+    D100, D101, D102, D103, D104, D105, D107, D202,
+    DAR101,
+    DAR201, DAR202,
+    DAR401,
+    RST202, RST203, RST206,
+
+per-file-ignores =
+    tests/*: WPS432,

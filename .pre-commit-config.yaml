@@ -1,0 +1,30 @@
+repos:
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
+        entry: mypy
+        language: python
+        types: [python]
+        verbose: true
+        description: static type checking with mypy
+      - id: ruff
+        name: ruff
+        entry: ruff check --fix --force-exclude
+        language: python
+        types_or: [ python]
+        require_serial: true
+        minimum_pre_commit_version: "2.9.2"
+      - id: ruff-format
+        name: ruff-format
+        entry: ruff format --force-exclude
+        language: python
+        types_or: [ python]
+        require_serial: true
+        minimum_pre_commit_version: "2.9.2"
+      - id: pip-licenses
+        name: pip-licenses
+        entry: pip-licenses
+        language: python
+        pass_filenames: false
+        minimum_pre_commit_version: "2.9.2"
