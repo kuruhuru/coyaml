@@ -12,59 +12,59 @@ import yaml
 from dotenv import load_dotenv
 from pydantic import BaseModel
 
-# Паттерн для поиска имен переменных
+# Pattern for finding variable names
 TEMPLATE_PATTERN = re.compile(r'\${{\s*(\w+):(.+?)}}')
 
 
-# Определяем типовую переменную
+# Define type variable
 T = TypeVar('T', bound='BaseModel')
 
 
 class YampycNode:
     """
-    Класс, представляющий узел конфигурации.
-    Позволяет обращаться к вложенным параметрам конфигурации через атрибуты и ключи.
+    A class representing a configuration node.
+    Allows accessing nested configuration parameters through attributes and keys.
     """
 
     def __init__(self, data: dict[str, Any]):
         """
-        Инициализация узла конфигурации.
+        Initialize a configuration node.
 
-        :param data: Словарь с данными конфигурации.
+        :param data: Dictionary with configuration data.
         """
         self._data = data
 
     def to_dict(self) -> dict[str, Any]:
         """
-        Конвертирует узел конфигурации в словарь.
+        Convert the configuration node to a dictionary.
         """
         return self._data
 
     def __iter__(self) -> Iterator[str]:
         """
-        Позволяет итерироваться по ключам конфигурации.
+        Allow iteration over configuration keys.
         """
         return iter(self._data)
 
     def items(self) -> Iterator[tuple[str, Any]]:
         """
-        Позволяет итерироваться по ключам и значениям конфигурации, как в словаре.
+        Allow iteration over configuration keys and values, like in a dictionary.
         """
         return self._data.items()  # type: ignore
 
     def values(self) -> Any:
         """
-        Позволяет итерироваться по значениям конфигурации.
+        Allow iteration over configuration values.
         """
         return self._data.values()
 
     def __getattr__(self, item: str) -> Any:
         """
-        Позволяет обращаться к параметрам конфигурации через атрибуты.
+        Allow accessing configuration parameters through attributes.
 
-        :param item: Имя параметра.
-        :return: Значение параметра или новый узел конфигурации, если параметр является словарем.
-        :raises AttributeError: Если параметр не найден.
+        :param item: Parameter name.
+        :return: Parameter value or a new configuration node if the parameter is a dictionary.
+        :raises AttributeError: If the parameter is not found.
         """
         if item not in self._data:
             raise AttributeError(f"'YampycNode' object has no attribute '{item}'")
@@ -77,11 +77,11 @@ class YampycNode:
 
     def __getitem__(self, item: str) -> Any:
         """
-        Позволяет обращаться к параметрам конфигурации через ключи, используя точечную нотацию.
+        Allow accessing configuration parameters through keys using dot notation.
 
-        :param item: Имя параметра или цепочка параметров через точку.
-        :return: Значение параметра.
-        :raises KeyError: Если параметр не найден.
+        :param item: Parameter name or chain of parameters separated by dots.
+        :return: Parameter value.
+        :raises KeyError: If the parameter is not found.
         """
         keys = item.split('.')
         value = self._data
@@ -99,23 +99,23 @@ class YampycNode:
 
     def __setattr__(self, key: str, value: Any) -> None:
         """
-        Устанавливает значение параметра конфигурации через атрибуты.
+        Set a configuration parameter value through attributes.
 
-        :param key: Имя параметра.
-        :param value: Значение параметра.
+        :param key: Parameter name.
+        :param value: Parameter value.
         """
-        if key == '_data':  # Исключение для внутреннего атрибута
+        if key == '_data':  # Exception for internal attribute
             super().__setattr__(key, value)
         else:
             self._data[key] = self._convert_value(value)
 
     def __setitem__(self, key: str, value: Any) -> None:
         """
-        Устанавливает значение параметра конфигурации через ключи.
-        Поддерживается установка параметров с точечной нотацией.
+        Set a configuration parameter value through keys.
+        Supports setting parameters with dot notation.
 
-        :param key: Имя параметра или цепочка параметров через точку.
-        :param value: Значение параметра.
+        :param key: Parameter name or chain of parameters separated by dots.
+        :param value: Parameter value.
         """
         keys = key.split('.')
         d = self._data
@@ -129,10 +129,10 @@ class YampycNode:
 
     def to(self, model: type[T] | str) -> T:
         """
-        Конвертирует данные конфигурации в объект указанной модели.
+        Convert configuration data to an object of the specified model.
 
-        :param model: Класс модели или строка с путем к классу.
-        :return: Экземпляр модели, инициализированный данными конфигурации.
+        :param model: Model class or string with class path.
+        :return: Model instance initialized with configuration data.
         """
         if isinstance(model, str):
             module_name, class_name = model.rsplit('.', 1)
@@ -144,10 +144,10 @@ class YampycNode:
 
     def _convert_value(self, value: Any) -> Any:
         """
-        Преобразует значение: словарь в YampycNode, список словарей в список YampycNode.
+        Convert value: dictionary to YampycNode, list of dictionaries to list of YampycNode.
 
-        :param value: Значение для преобразования.
-        :return: Преобразованное значение.
+        :param value: Value to convert.
+        :return: Converted value.
         """
         if isinstance(value, dict):
             return YampycNode(value)
@@ -157,11 +157,11 @@ class YampycNode:
 
     def __eq__(self, other: Any) -> bool:
         """
-        Сравнивает YampycNode с другим объектом.
-        Поддерживается сравнение со словарями и списками.
+        Compare YampycNode with another object.
+        Supports comparison with dictionaries and lists.
 
-        :param other: Объект для сравнения.
-        :return: True, если объекты равны.
+        :param other: Object to compare with.
+        :return: True if objects are equal.
         """
         if isinstance(other, YampycNode):
             return self._data == other._data
@@ -173,22 +173,22 @@ class YampycNode:
 
     def __repr__(self) -> str:
         """
-        Возвращает строковое представление YampycNode.
+        Return string representation of YampycNode.
         """
         return f'YampycNode({self._data})'
 
 
 class Yampyc(YampycNode):
     """
-    Класс, представляющий конфигурацию YAMPYC.
-    Наследует функциональность YampycNode и добавляет методы для работы с источниками данных.
+    A class representing YAMPYC configuration.
+    Inherits YampycNode functionality and adds methods for working with data sources.
     """
 
     def __init__(self, data: dict[str, Any] | None = None) -> None:
         """
-        Инициализация конфигурации YAMPYC.
+        Initialize YAMPYC configuration.
 
-        :param data: Словарь с данными конфигурации. Если не указан, используется пустой словарь.
+        :param data: Dictionary with configuration data. If not specified, an empty dictionary is used.
         """
         if data is None:
             data = {}
@@ -196,11 +196,11 @@ class Yampyc(YampycNode):
 
     def add_yaml_source(self, file_path: str) -> None:
         """
-        Добавляет данные конфигурации из YAML файла с поддержкой переменных окружения.
+        Add configuration data from a YAML file with environment variable support.
 
-        :param file_path: Путь к YAML файлу.
+        :param file_path: Path to YAML file.
         """
-        with open(file_path, 'rb') as file:  # Изменено на бинарный режим
+        with open(file_path, 'rb') as file:  # Changed to binary mode
             binary_content = file.read()
             try:
                 text_content = binary_content.decode('utf-8')
@@ -210,32 +210,32 @@ class Yampyc(YampycNode):
                     binary_content,  # object
                     e.start,  # start
                     e.end,  # end
-                    f'Ошибка декодирования файла {file_path}: {e}',
+                    f'Error decoding file {file_path}: {e}',
                 ) from e
             config = yaml.safe_load(text_content)
             self._data.update(config)
 
     def add_env_source(self, file_path: str | None = None) -> None:
         """
-        Добавляет данные конфигурации из .env файла.
+        Add configuration data from .env file.
 
-        :param file_path: Путь к .env файлу. Если не указан, используется файл по умолчанию.
+        :param file_path: Path to .env file. If not specified, default file is used.
         """
-        # load_dotenv может работать с текстовыми файлами, но если требуется, можно модифицировать
-        # его поведение. Однако чаще всего .env файлы в UTF-8, так что проблем не должно быть.
+        # load_dotenv can work with text files, but if needed, its behavior can be modified.
+        # However, .env files are usually in UTF-8, so there should be no problems.
         load_dotenv(dotenv_path=file_path)
         env_vars = {key: value for key, value in os.environ.items() if key.isupper()}
         self._data.update(env_vars)
 
     def get(self, key: str, value_type: type[Any] = str) -> Any:
         """
-        Получает значение параметра конфигурации с проверкой типа.
+        Get configuration parameter value with type checking.
 
-        :param key: Имя параметра.
-        :param value_type: Ожидаемый тип значения.
-        :return: Значение параметра.
-        :raises KeyError: Если параметр не найден.
-        :raises ValueError: Если значение параметра не соответствует ожидаемому типу.
+        :param key: Parameter name.
+        :param value_type: Expected value type.
+        :return: Parameter value.
+        :raises KeyError: If parameter is not found.
+        :raises ValueError: If parameter value does not match expected type.
         """
         value = self._data.get(key)
         if value is None:
@@ -247,43 +247,43 @@ class Yampyc(YampycNode):
 
     def set(self, key: str, value: Any) -> None:
         """
-        Устанавливает значение параметра конфигурации.
+        Set configuration parameter value.
 
-        :param key: Имя параметра.
-        :param value: Значение параметра.
+        :param key: Parameter name.
+        :param value: Parameter value.
         """
         self._data[key] = value
 
     def resolve_templates(self) -> None:
         """
-        Рекурсивно обходит конфигурационные данные и обрабатывает все шаблоны.
+        Recursively traverse configuration data and process all templates.
 
-        Этот метод выполняет второй проход по ранее загруженной конфигурации, заменяя все
-        шаблоны в формате `${{ action:parameters }}` на соответствующие значения. Поддерживаются
-        следующие действия:
+        This method performs a second pass through the previously loaded configuration, replacing all
+        templates in the format `${{ action:parameters }}` with corresponding values. The following
+        actions are supported:
 
-        - **env**: Вставка значения переменной окружения.
-        Синтаксис: `${{ env:VARIABLE_NAME[:DEFAULT_VALUE] }}`.
-        Если переменная окружения `VARIABLE_NAME` не установлена и значение по умолчанию
-        `DEFAULT_VALUE` не указано, вызывается исключение `ValueError`.
+        - **env**: Insert environment variable value.
+        Syntax: `${{ env:VARIABLE_NAME[:DEFAULT_VALUE] }}`.
+        If environment variable `VARIABLE_NAME` is not set and default value
+        `DEFAULT_VALUE` is not specified, a `ValueError` is raised.
 
-        - **file**: Вставка содержимого текстового файла.
-        Синтаксис: `${{ file:PATH_TO_FILE }}`.
-        Если файл по пути `PATH_TO_FILE` не найден, вызывается исключение `FileNotFoundError`.
+        - **file**: Insert text file content.
+        Syntax: `${{ file:PATH_TO_FILE }}`.
+        If file at path `PATH_TO_FILE` is not found, a `FileNotFoundError` is raised.
 
-        - **config**: Вставка значения из текущей конфигурации.
-        Синтаксис: `${{ config:PATH.TO.NODE }}`.
-        Если указанный путь `PATH.TO.NODE` не найден в конфигурации, вызывается исключение `KeyError`.
+        - **config**: Insert value from current configuration.
+        Syntax: `${{ config:PATH.TO.NODE }}`.
+        If specified path `PATH.TO.NODE` is not found in configuration, a `KeyError` is raised.
 
-        - **yaml**: Загрузка и вставка внешнего YAML файла.
-        Синтаксис: `${{ yaml:PATH_TO_YAML_FILE }}`.
-        Если файл по пути `PATH_TO_YAML_FILE` не найден, вызывается исключение `FileNotFoundError`.
+        - **yaml**: Load and insert external YAML file.
+        Syntax: `${{ yaml:PATH_TO_YAML_FILE }}`.
+        If file at path `PATH_TO_YAML_FILE` is not found, a `FileNotFoundError` is raised.
 
-        Метод обрабатывает шаблоны в строковых значениях конфигурации. Если результат замены
-        также является строкой, содержащей шаблоны, обработка повторяется рекурсивно до полного
-        разрешения всех шаблонов.
+        The method processes templates in string values of the configuration. If the replacement result
+        is also a string containing templates, processing is repeated recursively until all templates
+        are fully resolved.
 
-        Пример использования:
+        Example usage:
 
         ```yaml
         database:
@@ -295,21 +295,21 @@ class Yampyc(YampycNode):
             extra_settings: ${{ yaml:./configs/extra.yaml }}
         ```
 
-        После вызова `resolve_templates()` все шаблоны в конфигурации будут заменены на реальные значения.
+        After calling `resolve_templates()`, all templates in the configuration will be replaced with real values.
 
         :raises ValueError:
-            - Если в шаблоне указано неизвестное действие.
-            - Если переменная окружения не задана и не имеет значения по умолчанию.
-            - Если шаблон `config` внутри строки возвращает значение типа `dict` или `list`.
-            - Если попытаться использовать шаблон `yaml` внутри строки.
+            - If unknown action is specified in template.
+            - If environment variable is not set and has no default value.
+            - If `config` template inside string returns value of type `dict` or `list`.
+            - If trying to use `yaml` template inside string.
 
         :raises KeyError:
-            - Если указанный ключ не найден в конфигурации при использовании действия `config`.
+            - If specified key is not found in configuration when using `config` action.
 
         :raises FileNotFoundError:
-            - Если файл не найден при использовании действий `file` или `yaml`.
+            - If file is not found when using `file` or `yaml` actions.
 
-        :return: None. Метод изменяет состояние объекта, обновляя конфигурационные данные.
+        :return: None. Method modifies object state by updating configuration data.
         """
         self._data = self._resolve_node(self._data)
 
@@ -341,7 +341,7 @@ class Yampyc(YampycNode):
             elif action == 'yaml':
                 return self._handle_yaml(params)
             else:
-                raise ValueError(f'Неизвестное действие в шаблоне: {action}')
+                raise ValueError(f'Unknown action in template: {action}')
         else:
             # Replace any embedded templates within the string
             def replace_match(match: re.Match[str]) -> str:
@@ -354,18 +354,18 @@ class Yampyc(YampycNode):
                 elif action == 'config':
                     value = self._handle_config(params)
                     if isinstance(value, dict | list):
-                        raise ValueError('Шаблон config не может возвращать dict или list внутри строки.')
+                        raise ValueError('Config template cannot return dict or list inside string.')
                     return str(value)
                 elif action == 'yaml':
-                    raise ValueError('Шаблон yaml не может быть использован внутри строки.')
+                    raise ValueError('Yaml template cannot be used inside string.')
                 else:
-                    raise ValueError(f'Неизвестное действие в шаблоне: {action}')
+                    raise ValueError(f'Unknown action in template: {action}')
 
             return TEMPLATE_PATTERN.sub(replace_match, value)
 
-    # Реализация методов обработки для каждого действия
+    # Implementation of handling methods for each action
     def _handle_env(self, params: str) -> str:
-        # Разбиваем только по первому двоеточию
+        # Split only by first colon
         if ':' in params:
             var_name, default_value = params.split(':', 1)
             var_name = var_name.strip()
@@ -376,13 +376,13 @@ class Yampyc(YampycNode):
 
         value = os.getenv(var_name, default_value)
         if value is None:
-            raise ValueError(f'Переменная окружения {var_name} не задана и не имеет значения по умолчанию.')
+            raise ValueError(f'Environment variable {var_name} is not set and has no default value.')
         return value
 
     def _handle_file(self, params: str) -> str:
         file_path = params.strip()
         try:
-            with open(file_path, 'rb') as f:  # Изменено на бинарный режим
+            with open(file_path, 'rb') as f:  # Changed to binary mode
                 binary_content = f.read()
                 try:
                     return binary_content.decode('utf-8')
@@ -392,10 +392,10 @@ class Yampyc(YampycNode):
                         binary_content,  # object
                         e.start,  # start
                         e.end,  # end
-                        f'Ошибка декодирования файла {file_path}: {e}',
+                        f'Error decoding file {file_path}: {e}',
                     ) from e
         except FileNotFoundError as e:
-            raise FileNotFoundError(f'Файл не найден: {file_path}') from e
+            raise FileNotFoundError(f'File not found: {file_path}') from e
 
     def _handle_config(self, params: str) -> Any:
         config_path = params.strip()
@@ -403,14 +403,14 @@ class Yampyc(YampycNode):
         value = self._data
         for key in keys:
             if key not in value:
-                raise KeyError(f"Ключ '{config_path}' не найден в конфигурации.")
+                raise KeyError(f"Key '{config_path}' not found in configuration.")
             value = value[key]
         return value
 
     def _handle_yaml(self, params: str) -> Any:
         file_path = params.strip()
         try:
-            with open(file_path, 'rb') as f:  # Изменено на бинарный режим
+            with open(file_path, 'rb') as f:  # Changed to binary mode
                 binary_content = f.read()
                 try:
                     text_content = binary_content.decode('utf-8')
@@ -420,18 +420,18 @@ class Yampyc(YampycNode):
                         binary_content,  # object
                         e.start,  # start
                         e.end,  # end
-                        f'Ошибка декодирования файла {file_path}: {e}',
+                        f'Error decoding file {file_path}: {e}',
                     ) from e
                 yaml_content = yaml.safe_load(text_content)
-                # После загрузки внешнего YAML файла, необходимо также обработать его шаблоны
+                # After loading external YAML file, we need to process its templates as well
                 return self._resolve_node(yaml_content)
         except FileNotFoundError as e:
-            raise FileNotFoundError(f'YAML файл не найден: {file_path}') from e
+            raise FileNotFoundError(f'YAML file not found: {file_path}') from e
 
 
 class YampycFactory:
     """
-    Фабрика для создания и управления синглтонами конфигурации YAMPYC.
+    Factory for creating and managing YAMPYC configuration singletons.
     """
 
     _instances: dict[str, Yampyc] = {}
@@ -439,11 +439,11 @@ class YampycFactory:
     @classmethod
     def get_config(cls, key: str = 'default') -> Yampyc:
         """
-        Возвращает экземпляр конфигурации для указанного ключа.
-        Если экземпляр не существует, создается новый.
+        Return configuration instance for specified key.
+        If instance does not exist, create a new one.
 
-        :param key: Ключ конфигурации. По умолчанию "default".
-        :return: Экземпляр Yampyc.
+        :param key: Configuration key. Default is "default".
+        :return: Yampyc instance.
         """
         if key not in cls._instances:
             cls._instances[key] = Yampyc()
@@ -452,9 +452,9 @@ class YampycFactory:
     @classmethod
     def set_config(cls, config: Yampyc, key: str = 'default') -> None:
         """
-        Устанавливает экземпляр конфигурации для указанного ключа.
+        Set configuration instance for specified key.
 
-        :param config: Экземпляр Yampyc.
-        :param key: Ключ конфигурации. По умолчанию "default".
+        :param config: Yampyc instance.
+        :param key: Configuration key. Default is "default".
         """
         cls._instances[key] = config

@@ -1,137 +1,124 @@
 # YAMPYC Config
 
-`yampyc` — это пакет для управления конфигурациями в проектах. Он предоставляет удобные инструменты для работы с конфигурациями, поддерживая такие источники данных, как YAML-файлы, файлы `.env`, переменные окружения, содержимое текстовых файлов и внешние YAML-файлы. Библиотека также поддерживает использование точечной нотации для доступа к вложенным параметрам, работу с синглтонами и конвертацию данных в Pydantic-модели.
+`yampyc` is a package for managing configurations in projects. It provides convenient tools for working with configurations, supporting data sources such as YAML files, `.env` files, environment variables, text file contents, and external YAML files. The library also supports using dot notation for accessing nested parameters, working with singletons, and converting data to Pydantic models.
 
-## Оглавление
+## Table of Contents
 
 - [YAMPYC Config](#yampyc-config)
-  - [Оглавление](#оглавление)
-  - [Установка](#установка)
-  - [Основные возможности](#основные-возможности)
-    - [Новый механизм обработки шаблонов](#новый-механизм-обработки-шаблонов)
-    - [Поддерживаемые действия в шаблонах](#поддерживаемые-действия-в-шаблонах)
-      - [Вставка переменных окружения (`env`)](#вставка-переменных-окружения-env)
-      - [Вставка содержимого файлов (`file`)](#вставка-содержимого-файлов-file)
-      - [Вставка значения из конфигурации (`config`)](#вставка-значения-из-конфигурации-config)
-      - [Загрузка внешнего YAML-файла (`yaml`)](#загрузка-внешнего-yaml-файла-yaml)
-    - [Рекурсивная обработка шаблонов](#рекурсивная-обработка-шаблонов)
-  - [Использование](#использование)
-    - [Создание конфигурации](#создание-конфигурации)
-    - [Загрузка данных из YAML файла](#загрузка-данных-из-yaml-файла)
-    - [Загрузка данных из .env файла](#загрузка-данных-из-env-файла)
-    - [Обработка шаблонов](#обработка-шаблонов)
-    - [Работа с конфигурационными данными](#работа-с-конфигурационными-данными)
-    - [Использование точечной нотации](#использование-точечной-нотации)
-    - [Использование фабрики конфигураций](#использование-фабрики-конфигураций)
-    - [Конвертация в Pydantic-модели](#конвертация-в-pydantic-модели)
-    - [Итерация по узлу конфигурации](#итерация-по-узлу-конфигурации)
-    - [Метод `to_dict`](#метод-to_dict)
-  - [Тестирование](#тестирование)
-    - [Пример использования методов для итерации и `to_dict`](#пример-использования-методов-для-итерации-и-to_dict)
-
-## Установка
-
-
-Установите пакет командой:
+  - [Table of Contents](#table-of-contents)
+  - [Installation](#installation)
+  - [Main Features](#main-features)
+    - [New Template Processing Mechanism](#new-template-processing-mechanism)
+    - [Supported Template Actions](#supported-template-actions)
+      - [Environment Variable Insertion (`env`)](#environment-variable-insertion-env)
+      - [File Content Insertion (`file`)](#file-content-insertion-file)
+      - [Configuration Value Insertion (`config`)](#configuration-value-insertion-config)
+      - [External YAML File Loading (`yaml`)](#external-yaml-file-loading-yaml)
+    - [Recursive Template Processing](#recursive-template-processing)
+  
+## Installation
 
 ```bash
-uv add yampyc
+pip install yampyc
 ```
 
-## Основные возможности
+## Main Features
 
-### Новый механизм обработки шаблонов
+### New Template Processing Mechanism
 
-В версии **0.4.0** был реализован новый механизм обработки шаблонов, который выполняет подстановку после загрузки YAML-конфигурации. Это обеспечивает большую гибкость и расширяемость, позволяя использовать различные действия в шаблонах и поддерживая рекурсивную обработку.
+The library supports a powerful template processing mechanism that allows you to:
 
-### Поддерживаемые действия в шаблонах
+- Insert environment variable values
+- Insert text file contents
+- Insert values from the current configuration
+- Load and insert external YAML files
 
-Шаблоны имеют формат `${{ action:parameters }}`, где `action` — это действие, а `parameters` — параметры для этого действия.
+### Supported Template Actions
 
-#### Вставка переменных окружения (`env`)
+#### Environment Variable Insertion (`env`)
 
-Вставляет значение переменной окружения с возможностью указания значения по умолчанию.
+Inserts the value of an environment variable.
 
-**Синтаксис:**
+**Syntax:**
 
 ```yaml
 ${{ env:VARIABLE_NAME[:DEFAULT_VALUE] }}
 ```
 
-**Пример:**
+**Example:**
 
 ```yaml
-db:
+database:
   user: ${{ env:DB_USER }}
   password: ${{ env:DB_PASSWORD:default_password }}
 ```
 
-#### Вставка содержимого файлов (`file`)
+#### File Content Insertion (`file`)
 
-Вставляет содержимое указанного текстового файла.
+Inserts the content of a text file.
 
-**Синтаксис:**
+**Syntax:**
 
 ```yaml
 ${{ file:PATH_TO_FILE }}
 ```
 
-**Пример:**
+**Example:**
 
 ```yaml
 init_script: ${{ file:./scripts/init.sql }}
 ```
 
-#### Вставка значения из конфигурации (`config`)
+#### Configuration Value Insertion (`config`)
 
-Позволяет использовать значения из других частей текущей конфигурации.
+Inserts a value from the current configuration.
 
-**Синтаксис:**
+**Syntax:**
 
 ```yaml
 ${{ config:PATH.TO.NODE }}
 ```
 
-**Пример:**
+**Example:**
 
 ```yaml
-db_url: "postgresql://${{ config:db.user }}:${{ config:db.password }}@localhost:5432/app_db"
+db_url: "postgresql://${{ config:database.user }}:${{ config:database.password }}@localhost:5432/app_db"
 ```
 
-#### Загрузка внешнего YAML-файла (`yaml`)
+#### External YAML File Loading (`yaml`)
 
-Загружает и вставляет содержимое внешнего YAML-файла.
+Loads and inserts the content of an external YAML file.
 
-**Синтаксис:**
+**Syntax:**
 
 ```yaml
 ${{ yaml:PATH_TO_YAML_FILE }}
 ```
 
-**Пример:**
+**Example:**
 
 ```yaml
 extra_settings: ${{ yaml:./configs/extra.yaml }}
 ```
 
-### Рекурсивная обработка шаблонов
+### Recursive Template Processing
 
-Шаблоны могут быть вложены друг в друга. Обработка будет выполняться рекурсивно до полного разрешения всех шаблонов.
+Templates can be nested within each other. Processing will be performed recursively until all templates are fully resolved.
 
-**Пример:**
+**Example:**
 
 ```yaml
 nested_value: ${{ env:NESTED_ENV }}
 final_value: ${{ config:nested_value }}
 ```
 
-Если переменная окружения `NESTED_ENV` содержит другой шаблон, он также будет обработан.
+If the environment variable `NESTED_ENV` contains another template, it will also be processed.
 
-## Использование
+## Usage
 
-### Создание конфигурации
+### Creating Configuration
 
-Чтобы начать работу с конфигурацией, создайте экземпляр класса `Yampyc`:
+To start working with configuration, create an instance of the `Yampyc` class:
 
 ```python
 from yampyc import Yampyc
@@ -139,65 +126,65 @@ from yampyc import Yampyc
 config = Yampyc()
 ```
 
-### Загрузка данных из YAML файла
+### Loading Data from YAML File
 
-Загрузите данные из YAML файла:
+Load data from a YAML file:
 
 ```python
 config.add_yaml_source('config.yaml')
 ```
 
-### Загрузка данных из .env файла
+### Loading Data from .env File
 
-Загрузите данные из файла `.env`:
+Load data from a `.env` file:
 
 ```python
 config.add_env_source('.env')
 ```
 
-### Обработка шаблонов
+### Processing Templates
 
-После загрузки всех источников конфигурации необходимо вызвать метод `resolve_templates()`, чтобы обработать все шаблоны в конфигурации:
+After loading all configuration sources, you need to call the `resolve_templates()` method to process all templates in the configuration:
 
 ```python
 config.resolve_templates()
 ```
 
-### Работа с конфигурационными данными
+### Working with Configuration Data
 
-Доступ к параметрам конфигурации возможен как через атрибуты, так и через ключи:
+Access to configuration parameters is possible both through attributes and through keys:
 
 ```python
-database_url = config.database.url  # через атрибуты
-database_url = config['database.url']  # через точечную нотацию
+database_url = config.database.url  # through attributes
+database_url = config['database.url']  # through dot notation
 ```
 
-### Использование точечной нотации
+### Using Dot Notation
 
-Вы можете использовать точечную нотацию для доступа к вложенным параметрам конфигурации:
+You can use dot notation to access nested configuration parameters:
 
 ```python
 config['debug.db.url'] = "sqlite:///yampyc.db"
 assert config['debug.db.url'] == "sqlite:///yampyc.db"
 ```
 
-### Использование фабрики конфигураций
+### Using Configuration Factory
 
-Для работы с синглтонами конфигураций используется фабрика `YampycFactory`:
+For working with configuration singletons, use the `YampycFactory`:
 
 ```python
 from yampyc import YampycFactory
 
-# Установка конфигурации в фабрику
+# Setting configuration in factory
 YampycFactory.set_config(config)
 
-# Получение конфигурации из фабрики
+# Getting configuration from factory
 singleton_config = YampycFactory.get_config()
 ```
 
-### Конвертация в Pydantic-модели
+### Converting to Pydantic Models
 
-Конфигурацию можно конвертировать в Pydantic-модели:
+Configuration can be converted to Pydantic models:
 
 ```python
 from pydantic import BaseModel
@@ -209,122 +196,37 @@ db_config = config.database.to(DatabaseConfig)
 print(f"Database URL from model: {db_config.url}")
 ```
 
-### Итерация по узлу конфигурации
+### Iterating Over Configuration Node
 
-Вы можете итерироваться по ключам, значениям или парам ключ-значение в конфигурации, как в словаре:
+You can iterate over keys, values, or key-value pairs in the configuration, like in a dictionary:
 
 ```python
-# Итерация по ключам
+# Iterating over keys
 for key in config:
     print(key)
 
-# Итерация по ключам и значениям
+# Iterating over keys and values
 for key, value in config.items():
     print(f"{key}: {value}")
 
-# Итерация по значениям
+# Iterating over values
 for value in config.values():
     print(value)
 ```
 
-### Метод `to_dict`
+### `to_dict` Method
 
-Если вам нужно получить данные конфигурации в виде обычного словаря, вы можете использовать метод `to_dict`, который преобразует объект `YampycNode` обратно в стандартный словарь:
-
-```python
-config_dict = config.to_dict()
-print(config_dict)  # Выводит полную конфигурацию в виде словаря
-```
-
-## Тестирование
-
-Для тестирования используйте `pytest`. Пример теста находится в `tests/test_yampyc.py`:
+You can convert a configuration node to a dictionary:
 
 ```python
-import os
-import pytest
-from pydantic import BaseModel
-from yampyc import Yampyc, YampycFactory, YampycNode
-
-class DatabaseConfig(BaseModel):
-    """Модель конфигурации базы данных."""
-    url: str
-
-class DebugConfig(BaseModel):
-    """Модель конфигурации отладки, содержащая конфигурацию базы данных."""
-    db: DatabaseConfig
-
-class AppConfig(BaseModel):
-    """Основная модель конфигурации приложения, содержащая отладку и LLM параметры."""
-    debug: DebugConfig
-    llm: str
-
-def test_template_parsing() -> None:
-    """
-    Тест для проверки корректной обработки всех типов шаблонов в конфигурации.
-    """
-    # Устанавливаем переменные окружения для теста
-    os.environ["DB_USER"] = "test_user"
-    os.environ["DB_PASSWORD"] = "test_password"
-
-    config = Yampyc()
-    config.add_yaml_source("tests/config/config.yaml")
-    config.resolve_templates()
-
-    # Проверка замены переменных окружения
-    assert (
-        config["debug.db.user"] == "test_user"
-    ), "Ошибка в замене переменной окружения для 'debug.db.user'."
-    assert (
-        config["debug.db.password"] == "test_password"
-    ), "Ошибка в замене переменной окружения для 'debug.db.password'."
-
-    # Проверка вставки содержимого файла
-    with open("tests/scripts/init.sql", "r") as f:
-        init_script_content = f.read()
-    assert (
-        config["debug.db.init_script"] == init_script_content
-    ), "Ошибка в вставке содержимого файла 'init.sql'."
-
-    # Проверка вставки значения из текущей конфигурации
-    expected_db_url = f"postgresql://{config['debug.db.user']}:{config['debug.db.password']}@localhost:5432/app_db"
-    assert (
-        config["app.db_url"] == expected_db_url
-    ), "Ошибка в вставке значения из текущей конфигурации в 'app.db_url'."
-
-    # Проверка загрузки внешнего YAML файла
-    assert (
-        config["app.extra_settings.feature_flags.enable_new_feature"] is True
-    ), "Ошибка в загрузке внешнего YAML файла и чтении 'enable_new_feature'."
-    assert (
-        config["app.extra_settings.feature_flags.beta_mode"] is False
-    ), "Ошибка в загрузке внешнего YAML файла и чтении 'beta_mode'."
-
-# Остальные тесты аналогично...
-```
-
-### Пример использования методов для итерации и `to_dict`
-
-```python
-from yampyc import Yampyc
-
-config = Yampyc()
-config.add_yaml_source('config.yaml')
-config.resolve_templates()
-
-# Итерация по ключам конфигурации
-for key in config:
-    print(f"Key: {key}")
-
-# Преобразование в словарь
 config_dict = config.to_dict()
 print(config_dict)
 ```
 
 ---
 
-**Важно:** После загрузки конфигурации из YAML и `.env` файлов обязательно вызывайте `config.resolve_templates()`, чтобы все шаблоны были обработаны и заменены на реальные значения.
+**Important:** After loading configuration from YAML and `.env` files, be sure to call `config.resolve_templates()` to ensure all templates are processed and replaced with real values.
 
-**Примечание:** Убедитесь, что все файлы, указанные в шаблонах, существуют, и переменные окружения установлены или имеют значения по умолчанию, чтобы избежать ошибок при обработке шаблонов.
+**Note:** Make sure all files specified in templates exist, and environment variables are set or have default values to avoid errors during template processing.
 
-Если у вас возникнут вопросы или проблемы при использовании `yampyc`, пожалуйста, обратитесь к документации или создайте issue в репозитории проекта.
+If you have any questions or issues while using `yampyc`, please refer to the documentation or create an issue in the project repository.
