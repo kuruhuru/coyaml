@@ -31,16 +31,8 @@
 
 ## Установка
 
-Для установки пакета `yampyc`, создайте в корне вашего проекта файл `pyproject.toml` с такими настройками:
 
-```toml
-[tool.uv]
-extra-index-url = [
-    "https://nexusrepo.smart-consulting.ru/repository/pypi-group/simple",
-]
-```
-
-Затем установите пакет командой:
+Установите пакет командой:
 
 ```bash
 uv add yampyc
