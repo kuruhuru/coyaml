@@ -1,232 +1,217 @@
-# YAMPYC Config
-
-`yampyc` is a package for managing configurations in projects. It provides convenient tools for working with configurations, supporting data sources such as YAML files, `.env` files, environment variables, text file contents, and external YAML files. The library also supports using dot notation for accessing nested parameters, working with singletons, and converting data to Pydantic models.
+Coyaml — a copilot library for effortless YAML management using dot notation. It offers a gentle learning curve with advanced features: Pydantic validation, environment variable resolution (with defaults), file and external YAML inclusion, recursive template resolution, and dependency injection via function or class paths in YAML.
 
 ## Table of Contents
 
-- [YAMPYC Config](#yampyc-config)
-  - [Table of Contents](#table-of-contents)
-  - [Installation](#installation)
-  - [Main Features](#main-features)
-    - [New Template Processing Mechanism](#new-template-processing-mechanism)
-    - [Supported Template Actions](#supported-template-actions)
-      - [Environment Variable Insertion (`env`)](#environment-variable-insertion-env)
-      - [File Content Insertion (`file`)](#file-content-insertion-file)
-      - [Configuration Value Insertion (`config`)](#configuration-value-insertion-config)
-      - [External YAML File Loading (`yaml`)](#external-yaml-file-loading-yaml)
-    - [Recursive Template Processing](#recursive-template-processing)
-  
+* [Installation](#installation)
+* [Key Features](#key-features)
+
+  * [Dot Notation Access](#dot-notation-access)
+  * [Pydantic Integration](#pydantic-integration)
+  * [Environment Variables](#environment-variables)
+  * [File Content Insertion](#file-content-insertion)
+  * [External YAML Import](#external-yaml-import)
+  * [Template Resolution](#template-resolution)
+  * [Dependency Injection](#dependency-injection)
+* [Quick Start](#quick-start)
+* [API: Core Classes](#api-core-classes)
+* [Examples](#examples)
+* [License](#license)
+
 ## Installation
 
+Install via pip:
+
 ```bash
-pip install yampyc
+pip install coyaml
 ```
 
-## Main Features
+## Key Features
 
-### New Template Processing Mechanism
+### Dot Notation Access
 
-The library supports a powerful template processing mechanism that allows you to:
-
-- Insert environment variable values
-- Insert text file contents
-- Insert values from the current configuration
-- Load and insert external YAML files
-
-### Supported Template Actions
-
-#### Environment Variable Insertion (`env`)
-
-Inserts the value of an environment variable.
-
-**Syntax:**
-
-```yaml
-${{ env:VARIABLE_NAME[:DEFAULT_VALUE] }}
-```
-
-**Example:**
-
-```yaml
-database:
-  user: ${{ env:DB_USER }}
-  password: ${{ env:DB_PASSWORD:default_password }}
-```
-
-#### File Content Insertion (`file`)
-
-Inserts the content of a text file.
-
-**Syntax:**
-
-```yaml
-${{ file:PATH_TO_FILE }}
-```
-
-**Example:**
-
-```yaml
-init_script: ${{ file:./scripts/init.sql }}
-```
-
-#### Configuration Value Insertion (`config`)
-
-Inserts a value from the current configuration.
-
-**Syntax:**
-
-```yaml
-${{ config:PATH.TO.NODE }}
-```
-
-**Example:**
-
-```yaml
-db_url: "postgresql://${{ config:database.user }}:${{ config:database.password }}@localhost:5432/app_db"
-```
-
-#### External YAML File Loading (`yaml`)
-
-Loads and inserts the content of an external YAML file.
-
-**Syntax:**
-
-```yaml
-${{ yaml:PATH_TO_YAML_FILE }}
-```
-
-**Example:**
-
-```yaml
-extra_settings: ${{ yaml:./configs/extra.yaml }}
-```
-
-### Recursive Template Processing
-
-Templates can be nested within each other. Processing will be performed recursively until all templates are fully resolved.
-
-**Example:**
-
-```yaml
-nested_value: ${{ env:NESTED_ENV }}
-final_value: ${{ config:nested_value }}
-```
-
-If the environment variable `NESTED_ENV` contains another template, it will also be processed.
-
-## Usage
-
-### Creating Configuration
-
-To start working with configuration, create an instance of the `Yampyc` class:
+Read and write nested keys using attribute or bracket syntax:
 
 ```python
-from yampyc import Yampyc
+from coyaml import YConfig
 
-config = Yampyc()
+config = YConfig()
+config.add_yaml_source('tests/config/config.yaml')
+print(config.debug.db.url)                # attribute-style
+print(config['debug.db.url'])             # dot-string key
+config['debug.db.url'] = 'sqlite:///db.sqlite'  # write by key
 ```
 
-### Loading Data from YAML File
+### Pydantic Integration
 
-Load data from a YAML file:
-
-```python
-config.add_yaml_source('config.yaml')
-```
-
-### Loading Data from .env File
-
-Load data from a `.env` file:
-
-```python
-config.add_env_source('.env')
-```
-
-### Processing Templates
-
-After loading all configuration sources, you need to call the `resolve_templates()` method to process all templates in the configuration:
-
-```python
-config.resolve_templates()
-```
-
-### Working with Configuration Data
-
-Access to configuration parameters is possible both through attributes and through keys:
-
-```python
-database_url = config.database.url  # through attributes
-database_url = config['database.url']  # through dot notation
-```
-
-### Using Dot Notation
-
-You can use dot notation to access nested configuration parameters:
-
-```python
-config['debug.db.url'] = "sqlite:///yampyc.db"
-assert config['debug.db.url'] == "sqlite:///yampyc.db"
-```
-
-### Using Configuration Factory
-
-For working with configuration singletons, use the `YampycFactory`:
-
-```python
-from yampyc import YampycFactory
-
-# Setting configuration in factory
-YampycFactory.set_config(config)
-
-# Getting configuration from factory
-singleton_config = YampycFactory.get_config()
-```
-
-### Converting to Pydantic Models
-
-Configuration can be converted to Pydantic models:
+Convert configuration sections into Pydantic models for type-safe access:
 
 ```python
 from pydantic import BaseModel
+from coyaml import YConfig
 
-class DatabaseConfig(BaseModel):
-    url: str
+class DebugConfig(BaseModel):
+    db: DatabaseConfig
 
-db_config = config.database.to(DatabaseConfig)
-print(f"Database URL from model: {db_config.url}")
+config = YConfig().add_yaml_source('tests/config/config.yaml')
+debug: DebugConfig = config.debug.to(DebugConfig)
+print(debug.db.url)
+
+# Or convert whole config:
+from test_config import AppConfig
+app_config: AppConfig = config.to(AppConfig)
+print(app_config.llm)
 ```
 
-### Iterating Over Configuration Node
+### Environment Variables
 
-You can iterate over keys, values, or key-value pairs in the configuration, like in a dictionary:
+Use `${{ env:VAR[:default] }}` syntax to inject system or `.env` values with optional defaults:
+
+```yaml
+# tests/config/config.yaml
+index: 9
+DEBUG:
+  db:
+    user: ${{ env:DB_USER:testuser }}
+    password: ${{ env:DB_PASSWORD }}
+```
+
+`config.resolve_templates()` will substitute:
+
+* `DB_USER` or use `testuser`
+* raise `ValueError` if `DB_PASSWORD` is unset and no default provided
+
+### File Content Insertion
+
+Embed external file contents via `${{ file:path/to/file }}`:
+
+```yaml
+init_script: ${{ file:tests/config/init.sql }}
+```
+
+### External YAML Import
+
+Merge another YAML file recursively using `${{ yaml:path/to/other.yaml }}`:
+
+```yaml
+app:
+  extra: ${{ yaml:tests/config/extra.yaml }}
+```
+
+### Template Resolution
+
+Support `${{ config:other.key }}` to reference existing config values, nested resolves, and catch missing keys with `KeyError`.
+
+### Dependency Injection
+
+Specify full import paths in YAML and load at runtime:
+
+```yaml
+services:
+  init: myapp.db.initialize_database
+```
 
 ```python
-# Iterating over keys
-for key in config:
-    print(key)
-
-# Iterating over keys and values
-for key, value in config.items():
-    print(f"{key}: {value}")
-
-# Iterating over values
-for value in config.values():
-    print(value)
+fn = config.services.init.to_callable()  # returns function
+fn()
 ```
 
-### `to_dict` Method
-
-You can convert a configuration node to a dictionary:
+## Quick Start
 
 ```python
-config_dict = config.to_dict()
-print(config_dict)
+from coyaml import YConfig, YConfigFactory
+
+# Create or retrieve singleton
+config = YConfig()
+YConfigFactory.set_config(config)
+config = YConfigFactory.get_config()
+
+# Load sources
+config.add_yaml_source('tests/config/config.yaml')
+config.add_env_source('tests/config/config.env')
+
+# Resolve all templates (env, file, yaml, config)
+config.resolve_templates()
+
+# Access values
+i = config.index                  # integer from YAML
+env1 = config.ENV1                # from .env
+url = config['debug.db.url']
+
+# Validation / conversion
+from pydantic import BaseModel
+class MySettings(BaseModel):
+    index: int
+    ENV1: str
+settings = config.to(MySettings)
 ```
 
----
+## API: Core Classes
 
-**Important:** After loading configuration from YAML and `.env` files, be sure to call `config.resolve_templates()` to ensure all templates are processed and replaced with real values.
+* **`YConfig`** — main configuration container
 
-**Note:** Make sure all files specified in templates exist, and environment variables are set or have default values to avoid errors during template processing.
+  * `add_yaml_source(path: str) -> YConfig` — load YAML file
+  * `add_env_source(path: str = None) -> YConfig` — load `.env` and OS vars
+  * `resolve_templates() -> None` — process `env`, `file`, `yaml`, `config` templates
+  * `to(model: Type[BaseModel] | str) -> Any` — convert to Pydantic model or import path
+  * `get(key: str, value_type: Type[Any] = str) -> Any` — retrieve typed value
+  * `set(key: str, value: Any) -> None` — set or override value
+  * `__getitem__(key: str) -> Any`, `__setitem__(key: str, value: Any)` — bracket access
 
-If you have any questions or issues while using `yampyc`, please refer to the documentation or create an issue in the project repository.
+* **`YConfigFactory`** — registry for singleton configs
+
+  * `set_config(config: YConfig, key: str = 'default') -> None`
+  * `get_config(key: str = 'default') -> YConfig`
+
+* **`YNode`** — node wrapper for dicts and lists
+
+  * Supports iteration: `for k in node`, `node.items()`, `node.values()`
+
+## Examples
+
+1. **Loading YAML & .env**
+
+   ```python
+   config = YConfig()
+   config.add_yaml_source('tests/config/config.yaml')
+   config.add_env_source('tests/config/config.env')
+   YConfigFactory.set_config(config)
+   config = YConfigFactory.get_config()
+
+   assert config.index == 9
+   assert config.ENV1 == '1.0'
+   assert config.get('ENV2') == 'String from env file'
+   ```
+
+2. **Dot Notation Read/Write**
+
+   ```python
+   config['debug.db.url'] = 'sqlite:///local.db'
+   assert config.debug.db.url.startswith('sqlite')
+   ```
+
+3. **Pydantic Conversion by String**
+
+   ```python
+   app_cfg: AppConfig = config.to('test_config.AppConfig')
+   ```
+
+4. **Iterate over YNode**
+
+   ```python
+   node = YNode({'a': 1, 'b': 2})
+   keys = list(node)           # ['a', 'b']
+   items = list(node.items())  # [('a', 1), ('b', 2)]
+   ```
+
+5. **Error Handling**
+
+   ```python
+   try:
+       _ = config['non.existent']
+   except KeyError:
+       print("Missing key raised correctly")
+   ```
+
+## License
+
+Apache License 2.0

@@ -21,10 +21,10 @@ Usage example:
     print(config.get('some_key'))
 """
 
-from yampyc._internal._yampyc import (
-    Yampyc,
-    YampycFactory,
-    YampycNode,
+from coyaml._internal._config import (
+    YConfig,
+    YConfigFactory,
+    YNode,
 )
 
-__all__ = ['Yampyc', 'YampycFactory', 'YampycNode']
+__all__ = ['YConfig', 'YConfigFactory', 'YNode']

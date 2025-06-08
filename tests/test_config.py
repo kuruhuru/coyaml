@@ -1,13 +1,13 @@
-# tests/test_yampyc.py
+# tests/test_config.py
 import os
 
 import pytest
 from pydantic import BaseModel
 
-from yampyc import (
-    Yampyc,
-    YampycFactory,
-    YampycNode,
+from coyaml import (
+    YConfig,
+    YConfigFactory,
+    YNode,
 )
 
 
@@ -35,13 +35,13 @@ def test_loading_yaml_and_env_sources() -> None:
     Test loading data from YAML and .env files.
     Checks the correctness of data retrieval from different sources.
     """
-    config = Yampyc()
+    config = YConfig()
     config.add_yaml_source('tests/config/config.yaml')
     config.add_env_source('tests/config/config.env')
 
     # Set and get configuration from factory singleton
-    YampycFactory.set_config(config)
-    config = YampycFactory.get_config()
+    YConfigFactory.set_config(config)
+    config = YConfigFactory.get_config()
 
     # Check value from YAML
     assert config.index == 9, "Incorrect value 'index' from YAML file."
@@ -56,7 +56,7 @@ def test_converting_to_pydantic_model() -> None:
     Test converting configuration data to Pydantic models.
     Verifies that configuration is correctly converted to a Pydantic model.
     """
-    config = Yampyc()
+    config = YConfig()
     config.add_yaml_source('tests/config/config.yaml')
 
     # Convert to Pydantic model
@@ -73,7 +73,7 @@ def test_assignment_operations() -> None:
     Test assignment operations for new parameters in configuration.
     Verifies value assignment through attributes and dot notation.
     """
-    config = Yampyc()
+    config = YConfig()
     config.add_yaml_source('tests/config/config.yaml')
 
     # Example of parameter value assignment
@@ -89,7 +89,7 @@ def test_assignment_operations() -> None:
     assert config.new_param_dict == {'key': 'value'}, 'Error assigning dictionary.'
 
     config.new_param_list = [{'key1': 'value1'}, {'key2': 'value2'}]
-    assert isinstance(config.new_param_list[0], YampycNode), 'Error assigning list of dictionaries.'
+    assert isinstance(config.new_param_list[0], YNode), 'Error assigning list of dictionaries.'
     assert config.new_param_list[0]['key1'] == 'value1', 'Error in list of dictionaries value.'
 
 
@@ -98,7 +98,7 @@ def test_dot_notation_access() -> None:
     Test accessing configuration parameters using dot notation.
     Checks both reading and writing values.
     """
-    config = Yampyc()
+    config = YConfig()
     config.add_yaml_source('tests/config/config.yaml')
 
     # Check reading through dot notation
@@ -114,7 +114,7 @@ def test_invalid_key_access() -> None:
     Test handling of invalid keys.
     Verifies that an exception is raised when accessing a non-existent key.
     """
-    config = Yampyc()
+    config = YConfig()
     config.add_yaml_source('tests/config/config.yaml')
 
     try:
@@ -130,7 +130,7 @@ def test_empty_config() -> None:
     Test working with empty configuration.
     Verifies that empty configuration doesn't cause errors when reading and writing.
     """
-    config = Yampyc()
+    config = YConfig()
 
     # Empty configuration should not have any keys
     try:
@@ -150,11 +150,11 @@ def test_to_method_with_string() -> None:
     Test to method with string path to class.
     Verifies correct dynamic class loading.
     """
-    config = Yampyc()
+    config = YConfig()
     config.add_yaml_source('tests/config/config.yaml')
 
     # Use string path to load AppConfig class
-    app_config: AppConfig = config.to('test_yampyc.AppConfig')
+    app_config: AppConfig = config.to('test_config.AppConfig')
     assert isinstance(app_config, AppConfig), 'Error loading model through string.'
     assert app_config.llm == 'path/to/llm/config', 'Error converting configuration.'
 
@@ -164,7 +164,7 @@ def test_to_method_invalid_class() -> None:
     Test to method with invalid class path.
     Expects ImportError.
     """
-    config = Yampyc()
+    config = YConfig()
 
     with pytest.raises(ModuleNotFoundError):
         config.to('invalid.module.ClassName')
@@ -175,12 +175,12 @@ def test_to_method_invalid_attribute() -> None:
     Test to method with invalid class name in existing module.
     Expects AttributeError.
     """
-    config = Yampyc()
+    config = YConfig()
 
     with pytest.raises(ModuleNotFoundError):
-        config.to('yampyc_test.InvalidClassName')
+        config.to('invalid_module.InvalidClassName')
     with pytest.raises(AttributeError):
-        config.to('test_yampyc.InvalidClassName')
+        config.to('test_config.InvalidClassName')
 
 
 def test_to_method_with_class() -> None:
@@ -188,7 +188,7 @@ def test_to_method_with_class() -> None:
     Test to method with direct class passing.
     Verifies correct conversion of configuration to model object.
     """
-    config = Yampyc()
+    config = YConfig()
     config.add_yaml_source('tests/config/config.yaml')
 
     app_config = config.to(AppConfig)
@@ -200,7 +200,7 @@ def test_iteration_over_keys() -> None:
     """
     Test iteration over keys in YampycNode.
     """
-    config = YampycNode({'key1': 'value1', 'key2': 'value2'})
+    config = YNode({'key1': 'value1', 'key2': 'value2'})
 
     keys = list(config)
     assert keys == ['key1', 'key2'], 'Error in key iteration.'
@@ -210,7 +210,7 @@ def test_iteration_over_items() -> None:
     """
     Test iteration over keys and values in YampycNode.
     """
-    config = YampycNode({'key1': 'value1', 'key2': 'value2'})
+    config = YNode({'key1': 'value1', 'key2': 'value2'})
 
     items = list(config.items())
     assert items == [
@@ -223,7 +223,7 @@ def test_iteration_over_values() -> None:
     """
     Test iteration over values in YampycNode.
     """
-    config = YampycNode({'key1': 'value1', 'key2': 'value2'})
+    config = YNode({'key1': 'value1', 'key2': 'value2'})
 
     values = list(config.values())
     assert values == ['value1', 'value2'], 'Error in value iteration.'
@@ -240,7 +240,7 @@ def test_parsing_env_vars_in_yaml_with_default() -> None:
     if 'DB_PASSWORD' in os.environ:
         del os.environ['DB_PASSWORD']
 
-    config = Yampyc()
+    config = YConfig()
     config.add_yaml_source('tests/config/config.yaml')
     config.resolve_templates()
 
@@ -251,7 +251,7 @@ def test_parsing_env_vars_in_yaml_with_default() -> None:
     # Set DB_PASSWORD value and check again
     os.environ['DB_PASSWORD'] = 'real_password'  # noqa: S105
 
-    config = Yampyc()
+    config = YConfig()
     config.add_yaml_source('tests/config/config.yaml')
     config.resolve_templates()
 
@@ -266,7 +266,7 @@ def test_missing_env_var_without_default() -> None:
     if 'DB_USER' in os.environ:
         del os.environ['DB_USER']
 
-    config = Yampyc()
+    config = YConfig()
 
     with pytest.raises(  # noqa: PT012
         ValueError,
@@ -284,7 +284,7 @@ def test_template_parsing() -> None:
     os.environ['DB_USER'] = 'test_user'
     os.environ['DB_PASSWORD'] = 'test_password'  # noqa: S105
 
-    config = Yampyc()
+    config = YConfig()
     config.add_yaml_source('tests/config/config.yaml')
     config.resolve_templates()
 
@@ -327,7 +327,7 @@ def test_file_not_found() -> None:
     with open('tests/config/temp_config.yaml', 'w') as f:
         f.write(config_content)
 
-    config = Yampyc()
+    config = YConfig()
     config.add_yaml_source('tests/config/temp_config.yaml')
 
     with pytest.raises(
@@ -350,7 +350,7 @@ def test_yaml_file_not_found() -> None:
     with open('tests/config/temp_config.yaml', 'w') as f:
         f.write(config_content)
 
-    config = Yampyc()
+    config = YConfig()
     config.add_yaml_source('tests/config/temp_config.yaml')
 
     with pytest.raises(
@@ -373,7 +373,7 @@ def test_invalid_template_action() -> None:
     with open('tests/config/temp_config.yaml', 'w') as f:
         f.write(config_content)
 
-    config = Yampyc()
+    config = YConfig()
     config.add_yaml_source('tests/config/temp_config.yaml')
 
     with pytest.raises(
@@ -401,7 +401,7 @@ def test_recursive_template_resolution() -> None:
     with open('tests/config/temp_config.yaml', 'w') as f:
         f.write(config_content)
 
-    config = Yampyc()
+    config = YConfig()
     config.add_yaml_source('tests/config/temp_config.yaml')
     config.resolve_templates()
 
@@ -424,7 +424,7 @@ def test_config_key_not_found() -> None:
     with open('tests/config/temp_config.yaml', 'w') as f:
         f.write(config_content)
 
-    config = Yampyc()
+    config = YConfig()
     config.add_yaml_source('tests/config/temp_config.yaml')
 
     with pytest.raises(

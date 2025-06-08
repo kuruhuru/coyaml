@@ -20,7 +20,7 @@ TEMPLATE_PATTERN = re.compile(r'\${{\s*(\w+):(.+?)}}')
 T = TypeVar('T', bound='BaseModel')
 
 
-class YampycNode:
+class YNode:
     """
     A class representing a configuration node.
     Allows accessing nested configuration parameters through attributes and keys.
@@ -70,9 +70,9 @@ class YampycNode:
             raise AttributeError(f"'YampycNode' object has no attribute '{item}'")
         value = self._data[item]
         if isinstance(value, dict):
-            return YampycNode(value)
+            return YNode(value)
         elif isinstance(value, list):
-            return [YampycNode(v) if isinstance(v, dict) else v for v in value]
+            return [YNode(v) if isinstance(v, dict) else v for v in value]
         return value
 
     def __getitem__(self, item: str) -> Any:
@@ -92,9 +92,9 @@ class YampycNode:
             value = value[key]
 
         if isinstance(value, dict):
-            return YampycNode(value)
+            return YNode(value)
         elif isinstance(value, list):
-            return [YampycNode(v) if isinstance(v, dict) else v for v in value]
+            return [YNode(v) if isinstance(v, dict) else v for v in value]
         return value
 
     def __setattr__(self, key: str, value: Any) -> None:
@@ -150,9 +150,9 @@ class YampycNode:
         :return: Converted value.
         """
         if isinstance(value, dict):
-            return YampycNode(value)
+            return YNode(value)
         elif isinstance(value, list):
-            return [YampycNode(item) if isinstance(item, dict) else item for item in value]
+            return [YNode(item) if isinstance(item, dict) else item for item in value]
         return value
 
     def __eq__(self, other: Any) -> bool:
@@ -163,7 +163,7 @@ class YampycNode:
         :param other: Object to compare with.
         :return: True if objects are equal.
         """
-        if isinstance(other, YampycNode):
+        if isinstance(other, YNode):
             return self._data == other._data
         elif isinstance(other, dict):
             return self._data == other
@@ -178,7 +178,7 @@ class YampycNode:
         return f'YampycNode({self._data})'
 
 
-class Yampyc(YampycNode):
+class YConfig(YNode):
     """
     A class representing YAMPYC configuration.
     Inherits YampycNode functionality and adds methods for working with data sources.
@@ -429,15 +429,15 @@ class Yampyc(YampycNode):
             raise FileNotFoundError(f'YAML file not found: {file_path}') from e
 
 
-class YampycFactory:
+class YConfigFactory:
     """
     Factory for creating and managing YAMPYC configuration singletons.
     """
 
-    _instances: dict[str, Yampyc] = {}
+    _instances: dict[str, YConfig] = {}
 
     @classmethod
-    def get_config(cls, key: str = 'default') -> Yampyc:
+    def get_config(cls, key: str = 'default') -> YConfig:
         """
         Return configuration instance for specified key.
         If instance does not exist, create a new one.
@@ -446,11 +446,11 @@ class YampycFactory:
         :return: Yampyc instance.
         """
         if key not in cls._instances:
-            cls._instances[key] = Yampyc()
+            cls._instances[key] = YConfig()
         return cls._instances[key]
 
     @classmethod
-    def set_config(cls, config: Yampyc, key: str = 'default') -> None:
+    def set_config(cls, config: YConfig, key: str = 'default') -> None:
         """
         Set configuration instance for specified key.
 
