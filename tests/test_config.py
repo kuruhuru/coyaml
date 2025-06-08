@@ -105,8 +105,8 @@ def test_dot_notation_access() -> None:
     assert config['debug.db.url'] == 'postgres://user:password@localhost/dbname', 'Error reading through dot notation.'
 
     # Check writing through dot notation
-    config['debug.db.url'] = 'sqlite:///yampyc.db'
-    assert config['debug.db.url'] == 'sqlite:///yampyc.db', 'Error writing through dot notation.'
+    config['debug.db.url'] = 'sqlite:///coyaml.db'
+    assert config['debug.db.url'] == 'sqlite:///coyaml.db', 'Error writing through dot notation.'
 
 
 def test_invalid_key_access() -> None:
@@ -198,7 +198,7 @@ def test_to_method_with_class() -> None:
 
 def test_iteration_over_keys() -> None:
     """
-    Test iteration over keys in YampycNode.
+    Test iteration over keys in YNode.
     """
     config = YNode({'key1': 'value1', 'key2': 'value2'})
 
@@ -208,7 +208,7 @@ def test_iteration_over_keys() -> None:
 
 def test_iteration_over_items() -> None:
     """
-    Test iteration over keys and values in YampycNode.
+    Test iteration over keys and values in YNode.
     """
     config = YNode({'key1': 'value1', 'key2': 'value2'})
 
@@ -221,7 +221,7 @@ def test_iteration_over_items() -> None:
 
 def test_iteration_over_values() -> None:
     """
-    Test iteration over values in YampycNode.
+    Test iteration over values in YNode.
     """
     config = YNode({'key1': 'value1', 'key2': 'value2'})
 
