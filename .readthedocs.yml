@@ -10,8 +10,5 @@ python:
     - method: pip
       path: .
 
-sphinx:
-  configuration: docs/conf.py  # Не используется, но требуется для совместимости
-
 mkdocs:
   configuration: mkdocs.yml 
