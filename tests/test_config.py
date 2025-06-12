@@ -1,5 +1,6 @@
 # tests/test_config.py
 import os
+from pathlib import Path
 
 import pytest
 from pydantic import BaseModel
@@ -825,6 +826,57 @@ def test_cov_handle_yaml_not_found() -> None:
         cfg._handle_yaml('definitely_no_such_file.yaml')
 
 
+def test_getattr_invalid_attribute() -> None:
+    node = YNode({'a': 1})
+    with pytest.raises(AttributeError, match="'YNode' object has no attribute 'b'"):
+        _ = node.b
+
+
+def test_get_missing_key_raises_keyerror() -> None:
+    cfg = YConfig({'a': 'value'})
+    with pytest.raises(KeyError, match="Key 'missing' not found in the configuration"):
+        cfg.get('missing', str)
+
+
+def test_resolve_templates_list_branch() -> None:
+    cfg = YConfig({'list': ['x', 'y']})
+    cfg.resolve_templates()
+    assert cfg['list'] == ['x', 'y']
+
+
+def test_embedded_file_template_in_string(tmp_path: Path = Path('tests/config')) -> None:
+    # создаём временный файл с содержимым
+    file = tmp_path / 'embed.txt'
+    file.write_text('HELLO')
+    cfg = YConfig({'text': f'prefix ${{{{ file:{file.as_posix()} }}}} suffix'})
+    cfg.resolve_templates()
+    assert cfg['text'] == 'prefix HELLO suffix'
+
+
+def test_unknown_action_in_string_raises_value_error() -> None:
+    cfg = YConfig({'text': 'foo ${{ unknown:val }} bar'})
+    with pytest.raises(ValueError, match='Unknown action in template: unknown'):
+        cfg.resolve_templates()
+
+
+def test_file_decode_error_raises_unicode_decode_error(tmp_path: Path = Path('tests/config')) -> None:
+    # файл с некорректными UTF-8 байтами
+    file = tmp_path / 'binary.bin'
+    file.write_bytes(b'\xff\xfe')
+    cfg = YConfig({'data': f'${{{{ file:{file.as_posix()} }}}}'})
+    with pytest.raises(UnicodeDecodeError):
+        cfg.resolve_templates()
+
+
+def test_yaml_decode_error_in_handle_yaml(tmp_path: Path = Path('tests/config')) -> None:
+    # YAML-файл с некорректными UTF-8 байтами
+    file = tmp_path / 'binary.yaml'
+    file.write_bytes(b'\xff\xfe')
+    cfg = YConfig({'data': f'${{{{ yaml:{file.as_posix()} }}}}'})
+    with pytest.raises(UnicodeDecodeError):
+        cfg.resolve_templates()
+
+
 # Run tests
 if __name__ == '__main__':
     test_loading_yaml_and_env_sources()
@@ -891,3 +943,9 @@ if __name__ == '__main__':
     test_cov_resolve_value_else()
     test_cov_handle_file_not_found()
     test_cov_handle_yaml_not_found()
+    test_get_missing_key_raises_keyerror()
+    test_resolve_templates_list_branch()
+    test_embedded_file_template_in_string()
+    test_unknown_action_in_string_raises_value_error()
+    test_file_decode_error_raises_unicode_decode_error()
+    test_yaml_decode_error_in_handle_yaml()
