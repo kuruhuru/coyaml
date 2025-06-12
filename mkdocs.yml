@@ -1,0 +1,19 @@
+site_name: Coyaml Docs
+theme:
+  name: readthedocs
+  # name: material
+  # palette:
+  #   primary: 'indigo'
+  #   accent: 'indigo'
+  font:
+    text: Roboto
+    code: Roboto Mono
+  # logo: assets/logo_light_yellow_transparent.png
+plugins:
+  - search
+  - mkdocstrings
+markdown_extensions:
+  - pymdownx.superfences
+  - pymdownx.highlight
+extra_css:
+  - assets/extra.css

@@ -1,4 +1,4 @@
-# src/yampyc/_internal/_yampyc.py
+# src/coyaml/_internal/_config.py
 import importlib
 import os
 import re
@@ -67,7 +67,7 @@ class YNode:
         :raises AttributeError: If the parameter is not found.
         """
         if item not in self._data:
-            raise AttributeError(f"'YampycNode' object has no attribute '{item}'")
+            raise AttributeError(f"'YNode' object has no attribute '{item}'")
         value = self._data[item]
         if isinstance(value, dict):
             return YNode(value)
@@ -144,7 +144,7 @@ class YNode:
 
     def _convert_value(self, value: Any) -> Any:
         """
-        Convert value: dictionary to YampycNode, list of dictionaries to list of YampycNode.
+        Convert value: dictionary to YNode, list of dictionaries to list of YNode.
 
         :param value: Value to convert.
         :return: Converted value.
@@ -157,7 +157,7 @@ class YNode:
 
     def __eq__(self, other: Any) -> bool:
         """
-        Compare YampycNode with another object.
+        Compare YNode with another object.
         Supports comparison with dictionaries and lists.
 
         :param other: Object to compare with.
@@ -173,20 +173,20 @@ class YNode:
 
     def __repr__(self) -> str:
         """
-        Return string representation of YampycNode.
+        Return string representation of YNode.
         """
-        return f'YampycNode({self._data})'
+        return f'YNode({self._data})'
 
 
 class YConfig(YNode):
     """
-    A class representing YAMPYC configuration.
-    Inherits YampycNode functionality and adds methods for working with data sources.
+    A class representing YAML configuration.
+    Inherits YNode functionality and adds methods for working with data sources.
     """
 
     def __init__(self, data: dict[str, Any] | None = None) -> None:
         """
-        Initialize YAMPYC configuration.
+        Initialize YAML configuration.
 
         :param data: Dictionary with configuration data. If not specified, an empty dictionary is used.
         """
@@ -431,7 +431,7 @@ class YConfig(YNode):
 
 class YConfigFactory:
     """
-    Factory for creating and managing YAMPYC configuration singletons.
+    Factory for creating and managing YAML configuration singletons.
     """
 
     _instances: dict[str, YConfig] = {}
@@ -443,7 +443,7 @@ class YConfigFactory:
         If instance does not exist, create a new one.
 
         :param key: Configuration key. Default is "default".
-        :return: Yampyc instance.
+        :return: YNode instance.
         """
         if key not in cls._instances:
             cls._instances[key] = YConfig()
@@ -454,7 +454,7 @@ class YConfigFactory:
         """
         Set configuration instance for specified key.
 
-        :param config: Yampyc instance.
+        :param config: YNode instance.
         :param key: Configuration key. Default is "default".
         """
         cls._instances[key] = config
