@@ -357,7 +357,7 @@ class YConfig(YNode):
                         raise ValueError('Config template cannot return dict or list inside string.')
                     return str(value)
                 elif action == 'yaml':
-                    raise ValueError('Yaml template cannot be used inside string.')
+                    raise ValueError('YAML template cannot be used inside string.')
                 else:
                     raise ValueError(f'Unknown action in template: {action}')
 
@@ -444,9 +444,10 @@ class YConfigFactory:
 
         :param key: Configuration key. Default is "default".
         :return: YNode instance.
+        :raises KeyError: If key does not exist and no default instance is created.
         """
         if key not in cls._instances:
-            cls._instances[key] = YConfig()
+            raise KeyError(f"Configuration with key '{key}' not found")
         return cls._instances[key]
 
     @classmethod
@@ -456,5 +457,8 @@ class YConfigFactory:
 
         :param config: YNode instance.
         :param key: Configuration key. Default is "default".
+        :raises ValueError: If config is None.
         """
+        if config is None:
+            raise ValueError('Config cannot be None')
         cls._instances[key] = config
