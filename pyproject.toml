@@ -16,9 +16,10 @@ readme = "README.md"
 license = { text = "Apache-2.0" }
 
 [project.urls]
-Source = "https://github.com/kuruhuru/coyaml"
+Repository = "https://github.com/kuruhuru/coyaml"
 Documentation = "https://coyaml.readthedocs.io/en/latest/"
 Homepage = "https://coyaml.readthedocs.io/"
+# Changelog = "https://github.com/kuruhuru/coyaml/releases"
 
 [build-system]
 requires = ["hatchling"]
