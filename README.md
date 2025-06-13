@@ -1,3 +1,17 @@
+![Tests](https://github.com/kuruhuru/coyaml/actions/workflows/ci-main.yml/badge.svg)
+![Coverage](https://img.shields.io/coveralls/github/kuruhuru/coyaml.svg?branch=main)
+![Publish](https://github.com/kuruhuru/coyaml/actions/workflows/publish.yml/badge.svg)
+![PyPI](https://img.shields.io/pypi/v/coyaml.svg)
+![PyPI - License](https://img.shields.io/pypi/l/coyaml)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/coyaml)
+---
+
+**Documentation**:  https://coyaml.readthedocs.io/en/latest/
+
+**Source Code**: https://github.com/kuruhuru/coyaml
+
+---
+
 Coyaml — a copilot library for effortless YAML management using dot notation. It offers a gentle learning curve with advanced features: Pydantic validation, environment variable resolution (with defaults), file and external YAML inclusion, recursive template resolution, and dependency injection via function or class paths in YAML.
 
 ## Table of Contents
