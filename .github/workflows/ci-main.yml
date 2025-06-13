@@ -39,6 +39,10 @@ jobs:
         run: |
           uv run pytest --maxfail=1 --disable-warnings -q
 
+      - name: Run tests and collect lcov
+        run: |
+          uv run pytest --cov=coyaml --cov-report=lcov:coverage/lcov.info
+
       - name: Upload coverage to Coveralls
         uses: coverallsapp/github-action@v2
         with:
