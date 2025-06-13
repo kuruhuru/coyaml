@@ -7,7 +7,7 @@ on:
     branches: [develop]
 
 jobs:
-  lint-and-test:
+  lint-no-tests:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -34,7 +34,3 @@ jobs:
       - name: Run pre-commit
         run: |
           uv run pre-commit run --all-files
-
-      # - name: Run tests
-      #   run: |
-      #     uv run pytest --maxfail=1 --disable-warnings -q
