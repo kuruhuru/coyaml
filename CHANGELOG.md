@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [v0.9.2] - 2025-06-14
 
 ### Added
 - Added CI/CD and code coverage badges
@@ -8,6 +8,7 @@
 
 ### Changed
 - Improved test coverage to 100%
+- Improved documentation
 
 ## [v0.9.1] - 2025-06-12
 
@@ -30,4 +31,4 @@
 ### Added
 - Initial project version
 - Basic project structure
-- Initial documentation
+- Initial documentation 

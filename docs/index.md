@@ -29,4 +29,4 @@ Coyaml simplifies common YAML management tasks:
 <!-- - [Tutorials](tutorials/first-steps.md) -->
 - [API Reference](api/modules.md)
 <!-- - [Contributing](contributing.md) -->
-- [Changelog](changelog.md)
+- [Changelog](CHANGELOG.md)
