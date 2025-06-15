@@ -7,9 +7,11 @@ from pydantic import BaseModel
 
 from coyaml import (
     YConfig,
-    YConfigFactory,
     YNode,
+    YRegistry,
 )
+from coyaml.sources.env import EnvFileSource
+from coyaml.sources.yaml import YamlFileSource
 
 
 class DatabaseConfig(BaseModel):
@@ -37,19 +39,19 @@ def test_loading_yaml_and_env_sources() -> None:
     Checks the correctness of data retrieval from different sources.
     """
     config = YConfig()
-    config.add_yaml_source('tests/config/config.yaml')
-    config.add_env_source('tests/config/config.env')
+    config.add_source(YamlFileSource('tests/config/config.yaml'))
+    config.add_source(EnvFileSource('tests/config/config.env'))
 
     # Set and get configuration from factory singleton
-    YConfigFactory.set_config(config)
-    config = YConfigFactory.get_config()
+    YRegistry.set_config(config=config)
+    config = YRegistry.get_config()
 
     # Check value from YAML
     assert config.index == 9, "Incorrect value 'index' from YAML file."
 
     # Check value from .env file
     assert config.ENV1 == '1.0', "Incorrect value 'ENV1' from .env file."
-    assert config.get('ENV2') == 'String from env file', "Incorrect value 'ENV2' from .env file."
+    assert config['ENV2'] == 'String from env file', "Incorrect value 'ENV2' from .env file."
 
 
 def test_converting_to_pydantic_model() -> None:
@@ -58,7 +60,7 @@ def test_converting_to_pydantic_model() -> None:
     Verifies that configuration is correctly converted to a Pydantic model.
     """
     config = YConfig()
-    config.add_yaml_source('tests/config/config.yaml')
+    config.add_source(YamlFileSource('tests/config/config.yaml'))
 
     # Convert to Pydantic model
     debug: DebugConfig = config.debug.to(DebugConfig)
@@ -75,7 +77,7 @@ def test_assignment_operations() -> None:
     Verifies value assignment through attributes and dot notation.
     """
     config = YConfig()
-    config.add_yaml_source('tests/config/config.yaml')
+    config.add_source(YamlFileSource('tests/config/config.yaml'))
 
     # Example of parameter value assignment
     config.index = 10
@@ -100,7 +102,7 @@ def test_dot_notation_access() -> None:
     Checks both reading and writing values.
     """
     config = YConfig()
-    config.add_yaml_source('tests/config/config.yaml')
+    config.add_source(YamlFileSource('tests/config/config.yaml'))
 
     # Check reading through dot notation
     assert config['debug.db.url'] == 'postgres://user:password@localhost/dbname', 'Error reading through dot notation.'
@@ -116,7 +118,7 @@ def test_invalid_key_access() -> None:
     Verifies that an exception is raised when accessing a non-existent key.
     """
     config = YConfig()
-    config.add_yaml_source('tests/config/config.yaml')
+    config.add_source(YamlFileSource('tests/config/config.yaml'))
 
     try:
         config['non.existent.key']
@@ -152,7 +154,7 @@ def test_to_method_with_string() -> None:
     Verifies correct dynamic class loading.
     """
     config = YConfig()
-    config.add_yaml_source('tests/config/config.yaml')
+    config.add_source(YamlFileSource('tests/config/config.yaml'))
 
     # Use string path to load AppConfig class
     app_config: AppConfig = config.to('test_config.AppConfig')
@@ -190,7 +192,7 @@ def test_to_method_with_class() -> None:
     Verifies correct conversion of configuration to model object.
     """
     config = YConfig()
-    config.add_yaml_source('tests/config/config.yaml')
+    config.add_source(YamlFileSource('tests/config/config.yaml'))
 
     app_config = config.to(AppConfig)
     assert isinstance(app_config, AppConfig), 'Error converting to model object.'
@@ -242,7 +244,7 @@ def test_parsing_env_vars_in_yaml_with_default() -> None:
         del os.environ['DB_PASSWORD']
 
     config = YConfig()
-    config.add_yaml_source('tests/config/config.yaml')
+    config.add_source(YamlFileSource('tests/config/config.yaml'))
     config.resolve_templates()
 
     # Check that environment variables are correctly substituted
@@ -253,7 +255,7 @@ def test_parsing_env_vars_in_yaml_with_default() -> None:
     os.environ['DB_PASSWORD'] = 'real_password'  # noqa: S105
 
     config = YConfig()
-    config.add_yaml_source('tests/config/config.yaml')
+    config.add_source(YamlFileSource('tests/config/config.yaml'))
     config.resolve_templates()
 
     assert config.debug.db.password == 'real_password', "Error in environment variable replacement for 'db.password'."  # noqa: S105
@@ -273,7 +275,7 @@ def test_missing_env_var_without_default() -> None:
         ValueError,
         match=r'Environment variable DB_USER is not set and has no default value.',
     ):
-        config.add_yaml_source('tests/config/config.yaml')
+        config.add_source(YamlFileSource('tests/config/config.yaml'))
         config.resolve_templates()
 
 
@@ -286,7 +288,7 @@ def test_template_parsing() -> None:
     os.environ['DB_PASSWORD'] = 'test_password'  # noqa: S105
 
     config = YConfig()
-    config.add_yaml_source('tests/config/config.yaml')
+    config.add_source(YamlFileSource('tests/config/config.yaml'))
     config.resolve_templates()
 
     # Check environment variable replacement
@@ -329,7 +331,7 @@ def test_file_not_found() -> None:
         f.write(config_content)
 
     config = YConfig()
-    config.add_yaml_source('tests/config/temp_config.yaml')
+    config.add_source(YamlFileSource('tests/config/temp_config.yaml'))
 
     with pytest.raises(
         FileNotFoundError,
@@ -352,7 +354,7 @@ def test_yaml_file_not_found() -> None:
         f.write(config_content)
 
     config = YConfig()
-    config.add_yaml_source('tests/config/temp_config.yaml')
+    config.add_source(YamlFileSource('tests/config/temp_config.yaml'))
 
     with pytest.raises(
         FileNotFoundError,
@@ -375,7 +377,7 @@ def test_invalid_template_action() -> None:
         f.write(config_content)
 
     config = YConfig()
-    config.add_yaml_source('tests/config/temp_config.yaml')
+    config.add_source(YamlFileSource('tests/config/temp_config.yaml'))
 
     with pytest.raises(
         ValueError,
@@ -403,7 +405,7 @@ def test_recursive_template_resolution() -> None:
         f.write(config_content)
 
     config = YConfig()
-    config.add_yaml_source('tests/config/temp_config.yaml')
+    config.add_source(YamlFileSource('tests/config/temp_config.yaml'))
     config.resolve_templates()
 
     assert config['app.final_value'] == 'resolved_value', 'Error in recursive template processing.'
@@ -426,7 +428,7 @@ def test_config_key_not_found() -> None:
         f.write(config_content)
 
     config = YConfig()
-    config.add_yaml_source('tests/config/temp_config.yaml')
+    config.add_source(YamlFileSource('tests/config/temp_config.yaml'))
 
     with pytest.raises(
         KeyError,
@@ -460,7 +462,7 @@ def test_yaml_unicode_decode_error() -> None:
 
     config = YConfig()
     with pytest.raises(UnicodeDecodeError):
-        config.add_yaml_source('tests/config/invalid.yaml')
+        config.add_source(YamlFileSource('tests/config/invalid.yaml'))
 
     # Remove temporary file
     os.remove('tests/config/invalid.yaml')
@@ -498,11 +500,11 @@ def test_config_factory_multiple_instances() -> None:
     config1 = YConfig({'key1': 'value1'})
     config2 = YConfig({'key2': 'value2'})
 
-    YConfigFactory.set_config(config1, 'instance1')
-    YConfigFactory.set_config(config2, 'instance2')
+    YRegistry.set_config(config1, 'instance1')
+    YRegistry.set_config(config2, 'instance2')
 
-    assert YConfigFactory.get_config('instance1') == config1
-    assert YConfigFactory.get_config('instance2') == config2
+    assert YRegistry.get_config('instance1') == config1
+    assert YRegistry.get_config('instance2') == config2
 
 
 def test_empty_templates() -> None:
@@ -528,7 +530,7 @@ def test_special_characters_in_paths() -> None:
         f.write('key: value')
 
     config = YConfig()
-    config.add_yaml_source(special_path)
+    config.add_source(YamlFileSource(special_path))
     assert config['key'] == 'value'
 
     # Remove temporary file
@@ -557,7 +559,7 @@ def test_large_file_handling() -> None:
         f.write(large_content)
 
     config = YConfig()
-    config.add_yaml_source('tests/config/large.yaml')
+    config.add_source(YamlFileSource('tests/config/large.yaml'))
     assert len(config['key']) == 1000000
 
     # Remove temporary file
@@ -616,18 +618,6 @@ def test_setitem_with_nested_dict() -> None:
     assert isinstance(config['nested.deep'], YNode)
 
 
-def test_get_with_type_conversion() -> None:
-    """Test get method with type conversion."""
-    config = YConfig({'int_value': '42', 'float_value': '3.14', 'bool_value': 'true'})
-
-    assert config.get('int_value', int) == 42
-    assert config.get('float_value', float) == 3.14
-    assert config.get('bool_value', bool) is True
-
-    with pytest.raises(ValueError):
-        config.get('bool_value', int)  # Нельзя преобразовать 'true' в int
-
-
 def test_resolve_value_with_yaml_in_string() -> None:
     """Test _resolve_value with yaml template in string."""
     config = YConfig({'template': 'prefix ${{ yaml:tests/config/config.yaml }} suffix'})
@@ -645,13 +635,7 @@ def test_handle_yaml_with_invalid_file() -> None:
 def test_config_factory_with_nonexistent_key() -> None:
     """Test YConfigFactory with nonexistent key."""
     with pytest.raises(KeyError):
-        YConfigFactory.get_config('nonexistent')
-
-
-def test_config_factory_set_none() -> None:
-    """Test YConfigFactory set_config with None."""
-    with pytest.raises(ValueError):
-        YConfigFactory.set_config(None)  # type: ignore
+        YRegistry.get_config('nonexistent')
 
 
 def test_yconfig_eq_repr_and_constructor() -> None:
@@ -663,18 +647,6 @@ def test_yconfig_eq_repr_and_constructor() -> None:
     # YConfig(data=None)
     cfg = YConfig()
     assert isinstance(cfg, YConfig)
-
-
-def test_yconfig_get_valueerror() -> None:
-    cfg = YConfig({'a': 'not_int'})
-    with pytest.raises(ValueError):
-        cfg.get('a', int)
-
-
-def test_yconfig_set_method() -> None:
-    cfg = YConfig()
-    cfg.set('foo', 'bar')
-    assert cfg['foo'] == 'bar'
 
 
 def test_resolve_node_else_branch() -> None:
@@ -711,12 +683,6 @@ def test_ynode_repr() -> None:
     assert repr(node) == "YNode({'x': 42})"
 
 
-def test_yconfig_get_typeerror() -> None:
-    cfg = YConfig({'a': object()})
-    with pytest.raises(ValueError):
-        cfg.get('a', int)
-
-
 def test_resolve_node_else_none() -> None:
     cfg = YConfig()
     assert cfg._resolve_node(None) is None
@@ -741,17 +707,6 @@ def test_ynode_repr_with_complex_data() -> None:
     complex_data = {'nested': {'list': [1, 2, 3], 'dict': {'key': 'value'}, 'none': None, 'bool': True}}
     node = YNode(complex_data)
     assert repr(node) == f'YNode({complex_data})'
-
-
-def test_yconfig_get_with_complex_types() -> None:
-    """Test YConfig.get с ValueError и TypeError."""
-    cfg = YConfig({'invalid_int': 'not_a_number', 'invalid_float': 'not_a_float', 'invalid_dict': {'a': 1}})
-    with pytest.raises(ValueError):
-        cfg.get('invalid_int', int)
-    with pytest.raises(ValueError):
-        cfg.get('invalid_float', float)
-    with pytest.raises(ValueError):
-        cfg.get('invalid_dict', int)  # dict нельзя привести к int
 
 
 def test_resolve_value_with_complex_templates() -> None:
@@ -796,12 +751,6 @@ def test_cov_ynode_eq_false() -> None:
     assert node is not None
 
 
-def test_cov_yconfig_get_typeerror() -> None:
-    cfg = YConfig({'d': {'x': 1}})
-    with pytest.raises(ValueError):
-        cfg.get('d', int)  # dict -> int вызовет TypeError
-
-
 def test_cov_resolve_node_else() -> None:
     cfg = YConfig()
     assert cfg._resolve_node(123) == 123
@@ -830,12 +779,6 @@ def test_getattr_invalid_attribute() -> None:
     node = YNode({'a': 1})
     with pytest.raises(AttributeError, match="'YNode' object has no attribute 'b'"):
         _ = node.b
-
-
-def test_get_missing_key_raises_keyerror() -> None:
-    cfg = YConfig({'a': 'value'})
-    with pytest.raises(KeyError, match="Key 'missing' not found in the configuration"):
-        cfg.get('missing', str)
 
 
 def test_resolve_templates_list_branch() -> None:
@@ -914,36 +857,28 @@ if __name__ == '__main__':
     test_getattr_with_list()
     test_getitem_with_list()
     test_setitem_with_nested_dict()
-    test_get_with_type_conversion()
     test_resolve_value_with_yaml_in_string()
     test_handle_yaml_with_invalid_file()
     test_config_factory_with_nonexistent_key()
-    test_config_factory_set_none()
     test_yconfig_eq_repr_and_constructor()
-    test_yconfig_get_valueerror()
-    test_yconfig_set_method()
     test_resolve_node_else_branch()
     test_resolve_value_else_branch()
     test_handle_file_not_found()
     test_handle_yaml_not_found()
     test_ynode_eq_false_branch()
     test_ynode_repr()
-    test_yconfig_get_typeerror()
     test_resolve_node_else_none()
     test_resolve_value_else()
     test_ynode_eq_with_complex_types()
     test_ynode_repr_with_complex_data()
-    test_yconfig_get_with_complex_types()
     test_resolve_value_with_complex_templates()
     test_handle_file_with_special_paths()
     test_handle_yaml_with_special_paths()
     test_cov_ynode_eq_false()
-    test_cov_yconfig_get_typeerror()
     test_cov_resolve_node_else()
     test_cov_resolve_value_else()
     test_cov_handle_file_not_found()
     test_cov_handle_yaml_not_found()
-    test_get_missing_key_raises_keyerror()
     test_resolve_templates_list_branch()
     test_embedded_file_template_in_string()
     test_unknown_action_in_string_raises_value_error()

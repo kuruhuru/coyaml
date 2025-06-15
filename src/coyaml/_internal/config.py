@@ -1,12 +1,14 @@
-# src/coyaml/_internal/_config.py
+# src/coyaml/_internal/config.py
+
 import os
 import re
 from typing import Any
 
 import yaml
-from dotenv import load_dotenv
 
 from coyaml._internal.node import YNode
+from coyaml.sources.base import YSource
+from coyaml.utils.merge import deep_merge
 
 # Pattern for finding variable names
 TEMPLATE_PATTERN = re.compile(r'\${{\s*(\w+):(.+?)}}')
@@ -14,79 +16,28 @@ TEMPLATE_PATTERN = re.compile(r'\${{\s*(\w+):(.+?)}}')
 
 class YConfig(YNode):
     """
-    A class representing YAML configuration.
-    Inherits YNode functionality and adds methods for working with data sources.
+    Main configuration container. Holds merged data from multiple YSource instances.
+    Inherits dot-notation and .to() conversion from YNode.
     """
 
-    def __init__(self, data: dict[str, Any] | None = None) -> None:
-        """
-        Initialize YAML configuration.
+    def __init__(self, initial: dict[str, Any] | None = None):
+        super().__init__(initial or {})
+        self._sources: list[YSource] = []
 
-        :param data: Dictionary with configuration data. If not specified, an empty dictionary is used.
+    def add_source(self, source: YSource) -> 'YConfig':
         """
-        if data is None:
-            data = {}
-        super().__init__(data)
+        Load data from the given source and merge into this config.
 
-    def add_yaml_source(self, file_path: str) -> None:
-        """
-        Add configuration data from a YAML file with environment variable support.
+        Args:
+            source: An instance of YSource.
 
-        :param file_path: Path to YAML file.
+        Returns:
+            self, to allow chaining.
         """
-        with open(file_path, 'rb') as file:  # Changed to binary mode
-            binary_content = file.read()
-            try:
-                text_content = binary_content.decode('utf-8')
-            except UnicodeDecodeError as e:
-                raise UnicodeDecodeError(
-                    'utf-8',  # encoding
-                    binary_content,  # object
-                    e.start,  # start
-                    e.end,  # end
-                    f'Error decoding file {file_path}: {e}',
-                ) from e
-            config = yaml.safe_load(text_content)
-            self._data.update(config)
-
-    def add_env_source(self, file_path: str | None = None) -> None:
-        """
-        Add configuration data from .env file.
-
-        :param file_path: Path to .env file. If not specified, default file is used.
-        """
-        # load_dotenv can work with text files, but if needed, its behavior can be modified.
-        # However, .env files are usually in UTF-8, so there should be no problems.
-        load_dotenv(dotenv_path=file_path)
-        env_vars = {key: value for key, value in os.environ.items() if key.isupper()}
-        self._data.update(env_vars)
-
-    def get(self, key: str, value_type: type[Any] = str) -> Any:
-        """
-        Get configuration parameter value with type checking.
-
-        :param key: Parameter name.
-        :param value_type: Expected value type.
-        :return: Parameter value.
-        :raises KeyError: If parameter is not found.
-        :raises ValueError: If parameter value does not match expected type.
-        """
-        value = self._data.get(key)
-        if value is None:
-            raise KeyError(f"Key '{key}' not found in the configuration")
-        try:
-            return value_type(value)
-        except (ValueError, TypeError):
-            raise ValueError(f"Value for key '{key}' is not of type {value_type}")
-
-    def set(self, key: str, value: Any) -> None:
-        """
-        Set configuration parameter value.
-
-        :param key: Parameter name.
-        :param value: Parameter value.
-        """
-        self._data[key] = value
+        data = source.load()
+        deep_merge(self._data, data)
+        self._sources.append(source)
+        return self
 
     def resolve_templates(self) -> None:
         """
@@ -261,38 +212,3 @@ class YConfig(YNode):
                 return self._resolve_node(yaml_content)
         except FileNotFoundError as e:
             raise FileNotFoundError(f'YAML file not found: {file_path}') from e
-
-
-class YConfigFactory:
-    """
-    Factory for creating and managing YAML configuration singletons.
-    """
-
-    _instances: dict[str, YConfig] = {}
-
-    @classmethod
-    def get_config(cls, key: str = 'default') -> YConfig:
-        """
-        Return configuration instance for specified key.
-        If instance does not exist, create a new one.
-
-        :param key: Configuration key. Default is "default".
-        :return: YNode instance.
-        :raises KeyError: If key does not exist and no default instance is created.
-        """
-        if key not in cls._instances:
-            raise KeyError(f"Configuration with key '{key}' not found")
-        return cls._instances[key]
-
-    @classmethod
-    def set_config(cls, config: YConfig, key: str = 'default') -> None:
-        """
-        Set configuration instance for specified key.
-
-        :param config: YNode instance.
-        :param key: Configuration key. Default is "default".
-        :raises ValueError: If config is None.
-        """
-        if config is None:
-            raise ValueError('Config cannot be None')
-        cls._instances[key] = config
