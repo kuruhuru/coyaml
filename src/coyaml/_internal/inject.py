@@ -27,7 +27,7 @@ class DepName:
         self.name = name
 
 
-def coyaml(func):
+def coyaml(func):  # type: ignore
     """Decorator that injects parameters based on ``Annotated`` hints."""
 
     hints = get_type_hints(func, include_extras=True)
@@ -50,11 +50,7 @@ def coyaml(func):
                     if isinstance(m, ConfigKey):
                         cfg = YRegistry.get_config(m.key)
                         value = cfg[m.path]
-                        if (
-                            isinstance(value, YNode)
-                            and isinstance(typ, type)
-                            and issubclass(typ, BaseModel)
-                        ):
+                        if isinstance(value, YNode) and isinstance(typ, type) and issubclass(typ, BaseModel):
                             value = value.to(typ)
                         bound.arguments[name] = value
                         break

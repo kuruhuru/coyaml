@@ -45,6 +45,14 @@ class YRegistry:
             cls._instances[key] = config
 
     @classmethod
+    def remove_config(cls, key: str = 'default') -> None:
+        """
+        Remove a YConfig instance from the registry.
+        """
+        with cls._lock:
+            del cls._instances[key]
+
+    @classmethod
     def get_config(cls, key: str = 'default') -> YConfig:
         """
         Retrieve a stored config by key.
