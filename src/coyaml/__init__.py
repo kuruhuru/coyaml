@@ -23,8 +23,18 @@ Usage example:
 
 from coyaml._internal.config import YConfig
 from coyaml._internal.deps import YDeps
+from coyaml._internal.inject import ConfigKey, DepName, coyaml
 from coyaml._internal.node import YNode
 from coyaml._internal.registry import YRegistry
 from coyaml.sources.base import YSource
 
-__all__ = ['YConfig', 'YNode', 'YDeps', 'YRegistry', 'YSource']
+__all__ = [
+    'YConfig',
+    'YNode',
+    'YDeps',
+    'YRegistry',
+    'YSource',
+    'coyaml',
+    'ConfigKey',
+    'DepName',
+]

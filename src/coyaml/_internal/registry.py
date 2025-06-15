@@ -4,6 +4,7 @@ import threading
 from typing import Any
 
 from coyaml._internal.config import YConfig
+from coyaml._internal.deps import YDeps
 from coyaml.sources.base import YSource
 
 
@@ -18,6 +19,7 @@ class YRegistry:
     _instances: dict[str, YConfig] = {}
     _lock = threading.Lock()
     _scheme_map: dict[str, Any] = {}  # scheme -> YSource subclass or factory func
+    _deps: YDeps | None = None
 
     @classmethod
     def register_scheme(cls, scheme: str, handler: Any) -> None:
@@ -54,6 +56,18 @@ class YRegistry:
             if key not in cls._instances:
                 raise KeyError(f"Config '{key}' not found")
             return cls._instances[key]
+
+    @classmethod
+    def set_deps(cls, deps: YDeps) -> None:
+        """Store a YDeps container for dependency providers."""
+        cls._deps = deps
+
+    @classmethod
+    def get_deps(cls) -> YDeps:
+        """Retrieve stored YDeps container."""
+        if cls._deps is None:
+            raise KeyError('Dependencies container not set')
+        return cls._deps
 
     @classmethod
     def create_from_uri_list(
