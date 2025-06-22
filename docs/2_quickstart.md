@@ -6,63 +6,88 @@ Install Coyaml:
 pip install coyaml
 ```
 
-Load and resolve YAML configurations:
+## Loading a configuration
+
+The heart of Coyaml is the `YSettings` object — a thin wrapper around a nested `dict` that gives you **dot-notation access**, Pydantic conversion and much more.
 
 ```python
-from coyaml import YConfig
+from coyaml import YSettings
+from coyaml.sources.yaml import YamlFileSource
+from coyaml.sources.env import EnvFileSource
 
-config = (
-    YConfig()
-    .add_yaml_source('config.yaml')
-    .add_env_source()
+cfg = (
+    YSettings()
+    .add_source(YamlFileSource('config.yaml'))  # ↩ YAML file
+    .add_source(EnvFileSource('.env'))          # ↩ environment overrides
 )
-config.resolve_templates() # is necessary only when using template placeholders within the YAML configuration.
+
+# 🔄  Replace templates like `${{ env:DB_USER }}`
+cfg.resolve_templates()
 ```
 
-## Example YAML Configuration
+Alternatively, you can build a config with a single call using **URI helpers**:
+
+```python
+from coyaml import YRegistry
+
+cfg = YRegistry.create_from_uri_list([
+    'yaml://config.yaml',
+    'env://.env',
+])
+```
+
+## Example YAML with templates
 
 ```yaml
+index: 9
+stream: true
+llm: "path/to/llm/config"
 debug:
   db:
     url: "postgres://user:password@localhost/dbname"
-    user: ${{ env:DB_USER }}
-    password: ${{ env:DB_PASSWORD:strong:/-password }}
-    init_script: ${{ file:tests/config/init.sql }}
-llm: "path/to/llm/config"
-index: 9
-stream: true
+    user: ${{ env:DB_USER }}            # ← env variable
+    password: ${{ env:DB_PASSWORD:dev }} # ← with default
+    init_script: ${{ file:init.sql }}   # ← embed file content
 app:
-  db_url: "postgresql://${{ config:debug.db.user }}:${{ config:debug.db.password }}@localhost:5432/app_db"
-  extra_settings: ${{ yaml:tests/config/extra.yaml }}
+  db_url: "postgresql://${{ config:debug.db.user }}:${{ config:debug.db.password }}@localhost/app"
+  extra_settings: ${{ yaml:extra.yaml }} # ← include another YAML
 ```
 
-### Using Configurations in Code
+After `resolve_templates()` every placeholder is replaced by its real value.
+
+## Using the config
 
 ```python
-# Access nested configuration
-print(config.debug.db.url)
+# Simple attribute access
+print(cfg.debug.db.url)
 
-# Access environment variables with defaults
-print(config.debug.db.password)
-
-# Access embedded file content
-print(config.debug.db.init_script)
-
-# Access YAML-included configurations
-print(config.app.extra_settings)
-
-# Modify configuration dynamically
-config.index = 10
-
-# Validate configuration via Pydantic
+# Convert a node to a Pydantic model
 from pydantic import BaseModel
 
-class AppConfig(BaseModel):
-    db_url: str
-    extra_settings: dict
+class DBConfig(BaseModel):
+    url: str
+    user: str
+    password: str
 
-app_config = config.app.to(AppConfig)
-print(app_config)
+print(cfg.debug.db.to(DBConfig))
 ```
 
-Coyaml resolves references automatically, ensuring your configurations remain consistent and adaptable.
+## Zero-boilerplate injection
+
+Coyaml ships with a tiny helper to inject configuration values into **any** function:
+
+```python
+from typing import Annotated
+from coyaml import YResource, coyaml
+
+@coyaml
+def handler(
+    user: Annotated[str, YResource('debug.db.user')],
+    pwd: Annotated[str, YResource('debug.db.password')],
+):
+    print(user, pwd)
+
+handler()  # arguments are taken from cfg that lives in YRegistry ("default")
+```
+
+That's it — happy coding!
