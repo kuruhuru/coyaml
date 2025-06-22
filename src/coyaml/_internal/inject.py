@@ -34,6 +34,15 @@ def coyaml(func):  # type: ignore
                 continue
 
             hint = hints.get(name)
+            # Fallback: на Python 3.10 get_type_hints(include_extras=True) может «потерять»
+            # метаданные Annotated (возвращается только базовый тип без extras).
+            # Поэтому, если hint не содержит Annotated, пробуем взять исходную аннотацию
+            # прямо из сигнатуры.
+            if hint is None or get_origin(hint) is not Annotated:
+                raw_ann = _param.annotation
+                if get_origin(raw_ann) is Annotated:
+                    hint = raw_ann
+
             if hint is None:
                 continue
 
