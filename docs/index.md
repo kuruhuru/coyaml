@@ -20,6 +20,8 @@ Coyaml simplifies common YAML management tasks:
 * **Environment Variables**: Direct integration of OS or `.env` variables, with defaults.
 * **External File & YAML Inclusion**: Embed file contents and additional YAML files seamlessly.
 * **Reusable Nodes**: Reference and reuse YAML configuration sections dynamically.
+* **Template Engine**: `${{ env:VAR }}`, `${{ file:path }}`, `${{ config:node }}`, `${{ yaml:file }}` placeholders resolved automatically.
+* **Dependency Injection**: Drop-in `@coyaml` decorator + `typing.Annotated`/`YResource` for zero-boilerplate parameter injection.
 
 ## Quick Links
 
