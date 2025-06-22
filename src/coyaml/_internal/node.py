@@ -133,7 +133,7 @@ class YNode:
         if isinstance(model, str):
             module_name, class_name = model.rsplit('.', 1)
             module = importlib.import_module(module_name)
-            model_type = getattr(module, class_name)
+            model_type: type[T] = getattr(module, class_name)
         else:
             model_type = model
         return model_type(**self._data)

@@ -3,8 +3,7 @@
 import threading
 from typing import Any
 
-from coyaml._internal.config import YConfig
-from coyaml._internal.deps import YDeps
+from coyaml._internal.config import YSettings
 from coyaml.sources.base import YSource
 
 
@@ -16,10 +15,9 @@ class YRegistry:
     Supports creating configs from URI schemes and lists of URIs.
     """
 
-    _instances: dict[str, YConfig] = {}
+    _instances: dict[str, YSettings] = {}
     _lock = threading.Lock()
     _scheme_map: dict[str, Any] = {}  # scheme -> YSource subclass or factory func
-    _deps: YDeps | None = None
 
     @classmethod
     def register_scheme(cls, scheme: str, handler: Any) -> None:
@@ -33,7 +31,7 @@ class YRegistry:
         cls._scheme_map[scheme] = handler
 
     @classmethod
-    def set_config(cls, config: YConfig, key: str = 'default') -> None:
+    def set_config(cls, config: YSettings, key: str = 'default') -> None:
         """
         Store a YConfig instance under the given key.
 
@@ -53,7 +51,7 @@ class YRegistry:
             del cls._instances[key]
 
     @classmethod
-    def get_config(cls, key: str = 'default') -> YConfig:
+    def get_config(cls, key: str = 'default') -> YSettings:
         """
         Retrieve a stored config by key.
 
@@ -66,21 +64,9 @@ class YRegistry:
             return cls._instances[key]
 
     @classmethod
-    def set_deps(cls, deps: YDeps) -> None:
-        """Store a YDeps container for dependency providers."""
-        cls._deps = deps
-
-    @classmethod
-    def get_deps(cls) -> YDeps:
-        """Retrieve stored YDeps container."""
-        if cls._deps is None:
-            raise KeyError('Dependencies container not set')
-        return cls._deps
-
-    @classmethod
     def create_from_uri_list(
         cls, uri_list: list[str], key: str | None = None, resolve_templates: bool = True, **kwargs: Any
-    ) -> YConfig:
+    ) -> YSettings:
         """
         Create a YConfig by parsing a list of URIs and loading the corresponding sources.
         The sources are added to the config in the order they are provided.
@@ -95,7 +81,7 @@ class YRegistry:
         Returns:
             The created YConfig.
         """
-        config = YConfig()
+        config = YSettings()
         for uri in uri_list:
             scheme, path = uri.split('://', 1)
             if scheme not in cls._scheme_map:
@@ -103,7 +89,7 @@ class YRegistry:
             source_ctor = cls._scheme_map[scheme]
             # Instantiate source (either class or factory function)
             source: YSource = source_ctor(path, **kwargs) if callable(source_ctor) else source_ctor(path, **kwargs)
-            config = YConfig().add_source(source)
+            config = YSettings().add_source(source)
         # Optionally resolve templates here
         if resolve_templates:
             config.resolve_templates()
@@ -114,7 +100,7 @@ class YRegistry:
     @classmethod
     def create_from_uri(
         cls, uri: str, key: str | None = None, resolve_templates: bool = True, **kwargs: Any
-    ) -> YConfig:
+    ) -> YSettings:
         """
         Create a YConfig by parsing a URI and loading the corresponding source.
 

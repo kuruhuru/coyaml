@@ -1,0 +1,12 @@
+debug:
+  db:
+    url: "postgres://user:password@localhost/dbname"
+    user: ${{ env:DB_USER }}
+    password: ${{ env:DB_PASSWORD:strong:/-password }}
+    init_script: ${{ file:tests/config/init.sql }}
+llm: "path/to/llm/config"
+index: 9
+stream: true
+app:
+  db_url: "postgresql://${{ config:debug.db.user }}:${{ config:debug.db.password }}@localhost:5432/app_db"
+  extra_settings: ${{ yaml:tests/config/extra.yaml }}

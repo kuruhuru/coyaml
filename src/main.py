@@ -1,13 +1,13 @@
 import os
 from typing import Annotated
 
-from coyaml import ConfigKey, YConfig, coyaml
+from coyaml import YResource, YSettings, coyaml
 from coyaml._internal.registry import YRegistry
 from coyaml.sources.yaml import YamlFileSource
 
 
 def load_config(path: str) -> None:
-    config = YConfig()
+    config = YSettings()
     config.add_source(YamlFileSource(path))
     config.resolve_templates()
     YRegistry.set_config(config)
@@ -16,14 +16,14 @@ def load_config(path: str) -> None:
 @coyaml
 def function_with_basic_types1(
     a: str,
-    x: Annotated[int | None, ConfigKey('index')] = None,
+    x: Annotated[int | None, YResource('index')] = None,
     y: Annotated[
         bool | None,
-        ConfigKey('stream'),
+        YResource('stream'),
     ] = None,
     z: Annotated[
         str | None,
-        ConfigKey('llm'),
+        YResource('llm'),
     ] = None,
 ) -> tuple[str, int | None, bool | None, str | None]:
     """Return a, x, y and z values."""

@@ -6,9 +6,11 @@ import pytest
 from pydantic import BaseModel
 
 from coyaml import (
-    YConfig,
     YNode,
     YRegistry,
+)
+from coyaml import (
+    YSettings as YConfig,
 )
 from coyaml.sources.env import EnvFileSource
 from coyaml.sources.yaml import YamlFileSource

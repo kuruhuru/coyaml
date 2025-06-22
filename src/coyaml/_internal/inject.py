@@ -12,19 +12,12 @@ from coyaml._internal.node import YNode
 from coyaml._internal.registry import YRegistry
 
 
-class ConfigKey:
-    """Metadata for injecting a value from :class:`YConfig`."""
+class YResource:
+    """Метаданные для внедрения значения из :class:`YSettings`."""
 
-    def __init__(self, path: str, key: str = 'default') -> None:
+    def __init__(self, path: str, config: str = 'default') -> None:
         self.path = path
-        self.key = key
-
-
-class DepName:
-    """Metadata for injecting a dependency from :class:`YDeps`."""
-
-    def __init__(self, name: str) -> None:
-        self.name = name
+        self.config = config
 
 
 def coyaml(func):  # type: ignore
@@ -47,16 +40,29 @@ def coyaml(func):  # type: ignore
             if get_origin(hint) is Annotated:
                 typ, *meta = get_args(hint)
                 for m in meta:
-                    if isinstance(m, ConfigKey):
-                        cfg = YRegistry.get_config(m.key)
+                    if isinstance(m, YResource):
+                        cfg = YRegistry.get_config(m.config)
                         value = cfg[m.path]
-                        if isinstance(value, YNode) and isinstance(typ, type) and issubclass(typ, BaseModel):
-                            value = value.to(typ)
+                        if isinstance(value, YNode):
+                            # If the value is a YNode but the annotation expects some
+                            # other type, convert using YNode.to().  We purposefully
+                            # skip conversion when the annotation explicitly includes
+                            # YNode itself (so users can opt-out of automatic casting).
+                            candidates = get_args(typ) if get_args(typ) else (typ,)
+
+                            # Когда аннотация допускает YNode, оставляем как есть
+                            if YNode in candidates or typ is YNode:
+                                pass  # не конвертируем
+                            else:
+                                # ищем первый тип-класс-subclass(BaseModel) для конвертации
+                                target_type = next(
+                                    (c for c in candidates if isinstance(c, type) and issubclass(c, BaseModel)),
+                                    None,
+                                )
+
+                                if target_type is not None:
+                                    value = value.to(target_type)
                         bound.arguments[name] = value
-                        break
-                    elif isinstance(m, DepName):
-                        deps = YRegistry.get_deps()
-                        bound.arguments[name] = deps.get(m.name)
                         break
         return func(*bound.args, **bound.kwargs)
 

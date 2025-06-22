@@ -3,7 +3,7 @@ from typing import Annotated
 
 import pytest
 
-from coyaml import ConfigKey, YConfig, YRegistry, coyaml
+from coyaml import YRegistry, YResource, YSettings, coyaml
 from coyaml.sources.yaml import YamlFileSource
 
 
@@ -15,7 +15,7 @@ def load_config() -> Callable[[str], None]:
     """
 
     def _load_config(path: str) -> None:
-        config = YConfig()
+        config = YSettings()
         config.add_source(YamlFileSource(path))
         config.resolve_templates()
         YRegistry.set_config(config)
@@ -31,14 +31,14 @@ def function_with_basic_types() -> Callable[..., tuple[int, bool, str]]:
 
     @coyaml
     def _function_with_basic_types(
-        x: Annotated[int, ConfigKey('index')],
+        x: Annotated[int, YResource('index')],
         y: Annotated[
             bool,
-            ConfigKey('stream'),
+            YResource('stream'),
         ],
         z: Annotated[
             str,
-            ConfigKey('llm'),
+            YResource('llm'),
         ],
     ) -> tuple[int, bool, str]:
         """Return x, y and z values."""

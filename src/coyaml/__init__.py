@@ -21,20 +21,17 @@ Usage example:
     print(config.get('some_key'))
 """
 
-from coyaml._internal.config import YConfig
-from coyaml._internal.deps import YDeps
-from coyaml._internal.inject import ConfigKey, DepName, coyaml
+from coyaml._internal.config import YSettings
+from coyaml._internal.inject import YResource, coyaml
 from coyaml._internal.node import YNode
 from coyaml._internal.registry import YRegistry
 from coyaml.sources.base import YSource
 
 __all__ = [
-    'YConfig',
+    'YSettings',
     'YNode',
-    'YDeps',
     'YRegistry',
     'YSource',
     'coyaml',
-    'ConfigKey',
-    'DepName',
+    'YResource',
 ]

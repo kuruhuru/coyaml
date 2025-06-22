@@ -14,26 +14,19 @@ from coyaml.utils.merge import deep_merge
 TEMPLATE_PATTERN = re.compile(r'\${{\s*(\w+):(.+?)}}')
 
 
-class YConfig(YNode):
+class YSettings(YNode):
     """
-    Main configuration container. Holds merged data from multiple YSource instances.
-    Inherits dot-notation and .to() conversion from YNode.
+    Основной контейнер настроек.
+    Хранит агрегированные данные из нескольких источников (:class:`YSource`).
+    Наследуется от :class:`YNode`, поэтому поддерживает точечную нотацию и метод ``to``.
     """
 
     def __init__(self, initial: dict[str, Any] | None = None):
         super().__init__(initial or {})
         self._sources: list[YSource] = []
 
-    def add_source(self, source: YSource) -> 'YConfig':
-        """
-        Load data from the given source and merge into this config.
-
-        Args:
-            source: An instance of YSource.
-
-        Returns:
-            self, to allow chaining.
-        """
+    def add_source(self, source: YSource) -> 'YSettings':
+        """Загрузить данные из источника и слить в текущий объект."""
         data = source.load()
         deep_merge(self._data, data)
         self._sources.append(source)
