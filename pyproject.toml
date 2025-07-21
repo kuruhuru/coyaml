@@ -1,6 +1,6 @@
 [project]
 name = "coyaml"
-version = "0.9.3"
+version = "0.9.4"
 description = "Yaml configuration library for python"
 authors = [{ name = "Petr Matyukov", email = "kuruhuru@gmail.com" }]
 
