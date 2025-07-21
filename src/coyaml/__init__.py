@@ -21,17 +21,27 @@ Usage example:
     print(config.get('some_key'))
 """
 
+# Legacy imports for backward compatibility
+from coyaml._internal._config import YConfig, YConfigFactory
 from coyaml._internal.config import YSettings
 from coyaml._internal.inject import YResource, coyaml
 from coyaml._internal.node import YNode
 from coyaml._internal.registry import YRegistry
 from coyaml.sources.base import YSource
+from coyaml.sources.env import EnvFileSource
+from coyaml.sources.yaml import YamlFileSource
+from coyaml.utils.merge import deep_merge
 
 __all__ = [
     'YSettings',
     'YNode',
     'YRegistry',
     'YSource',
+    'YamlFileSource',
+    'EnvFileSource',
+    'deep_merge',
+    'YConfig',  # Legacy
+    'YConfigFactory',  # Legacy
     'coyaml',
     'YResource',
 ]

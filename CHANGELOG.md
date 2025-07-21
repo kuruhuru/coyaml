@@ -1,5 +1,20 @@
 # Changelog
 
+## [v0.9.4] - 2025-07-21
+
+### Added to __init__.py
+- New `YSettings` class as the primary configuration API
+- `YRegistry` for thread-safe configuration management with URI-based factory helpers
+- `YNode` class with extended API: `items()`, `values()`, rich equality and iterator support
+- `YSource` abstract base class and concrete implementations: `YamlFileSource`, `EnvFileSource`
+- `@coyaml` decorator and `YResource` metadata for zero-boilerplate dependency injection
+- `deep_merge` utility function for configuration merging
+- Legacy imports maintained for backward compatibility (`YConfig`, `YConfigFactory`)
+
+### Changed
+- Updated package exports to include new API classes while maintaining legacy support
+- Improved module structure with better separation of concerns
+
 ## [v0.9.3] - 2025-06-22
 
 ### Added
