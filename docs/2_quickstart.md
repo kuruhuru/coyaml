@@ -36,6 +36,11 @@ cfg = YRegistry.create_from_uri_list([
 ])
 ```
 
+Notes:
+- Sources are applied in order: later sources override earlier ones.
+- Call `resolve_templates()` after all sources are added to process `${{ env|file|config|yaml:… }}`.
+- You can mix URIs and manual sources as needed.
+
 ## Example YAML with templates
 
 ```yaml
@@ -89,5 +94,31 @@ def handler(
 
 handler()  # arguments are taken from cfg that lives in YRegistry ("default")
 ```
+
+### Quick injection taste: by name with mask
+
+You can also inject by parameter name. Add an optional `mask` on the decorator to constrain the search to a subtree.
+
+```python
+from typing import Annotated
+from coyaml import YResource, coyaml
+
+@coyaml(mask='debug.**')
+def connect(user: Annotated[str | None, YResource()] = None) -> str | None:
+    return user  # 'debug.db.user' will be found by name within the masked subtree
+
+print(connect())
+```
+
+Notes:
+- If nothing is found and the parameter is `Optional[...]` or has default `None`, `None` is injected.
+- If multiple matches are found and `unique=True` (default), an error points to candidate paths; restrict the `mask` or use an explicit path.
+
+## Merge semantics at a glance
+
+- Dictionaries are deep-merged (nested keys are merged recursively).
+- Lists are replaced by the later source (no per-item merge).
+
+See the dedicated tutorial: [Merging](tutorials/04_merging.md).
 
 That's it — happy coding!

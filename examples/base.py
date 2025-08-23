@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing import Annotated
 
 from pydantic import BaseModel
@@ -20,7 +21,9 @@ def load_config(path: str) -> None:
     YRegistry.set_config(config)
 
 
-load_config('src/coyaml/examples/config/config.yaml')
+# Load example config located next to this file
+EXAMPLES_DIR = Path(__file__).resolve().parent
+load_config((EXAMPLES_DIR / 'config' / 'config.yaml').as_posix())
 
 
 @coyaml
@@ -31,13 +34,6 @@ def function_with_basic_types(
 ) -> tuple[int | None, bool | None, str | None]:
     """Return x, y and z values."""
     return x, y, z
-
-
-def test_basic_types() -> None:
-    result = function_with_basic_types()
-    assert result == (9, True, 'path/to/llm/config')  # noqa: S101
-    result = function_with_basic_types(x=11)
-    assert result == (11, True, 'path/to/llm/config')  # noqa: S101
 
 
 class DBConfig(BaseModel):
@@ -56,17 +52,21 @@ def function_with_complex_types(
     return db, db_node
 
 
-def test_pydantic_model() -> None:
+def _test_basic_types() -> None:
+    result = function_with_basic_types()
+    assert result == (9, True, 'path/to/llm/config')  # noqa: S101
+    result = function_with_basic_types(x=11)
+    assert result == (11, True, 'path/to/llm/config')  # noqa: S101
+
+
+def _test_pydantic_model() -> None:
     db, db_node = function_with_complex_types()
     assert isinstance(db, DBConfig)  # noqa: S101
     assert isinstance(db_node, YNode)  # noqa: S101
-    print('db', db)
-    print('db_node', db_node)
     db1 = YRegistry.get_config().debug.db.to(DBConfig)
-    print('db1', db1)
     assert db == db1  # noqa: S101
 
 
 if __name__ == '__main__':
-    test_basic_types()
-    test_pydantic_model()
+    _test_basic_types()
+    _test_pydantic_model()

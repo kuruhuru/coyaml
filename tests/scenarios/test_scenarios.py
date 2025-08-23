@@ -40,7 +40,7 @@ def test_basic_types(
 
 
 def test_pydantic_model(load_config: Callable[[str], None]) -> None:
-    """Проверяем конвертацию в Pydantic-модель и работу YNode."""
+    """Verify conversion to Pydantic model and YNode behavior."""
 
     load_config('tests/config/config.yaml')
 
