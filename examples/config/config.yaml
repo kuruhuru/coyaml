@@ -10,3 +10,5 @@ stream: true
 app:
   db_url: "postgresql://${{ config:debug.db.user }}:${{ config:debug.db.password }}@localhost:5432/app_db"
   extra_settings: ${{ yaml:tests/config/extra.yaml }}
+
+

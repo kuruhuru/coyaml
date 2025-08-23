@@ -1,5 +1,21 @@
 # Changelog
 
+## [v0.10.0] - 2025-08-23
+
+### Added
+- Injection by parameter name with optional `mask` (glob over dotted paths: `*`, `**`) and deterministic behavior
+- Improved error diagnostics for injection (lists candidates, shows masks) and templates
+- New search utilities for dotted trees and masks
+- Tutorials (Basic, Templates, Injection, Merging, Registry), Concepts, Scenarios, Cookbook
+
+### Changed
+- `YResource.path` is now optional for by-name injection scenarios
+- Documentation restructured and expanded; README updated with DI examples
+
+### Fixed
+- Robust globstar handling in mask compilation
+- Numerous test improvements; coverage threshold enforced at 80% (current ~96%)
+
 ## [v0.9.4] - 2025-07-21
 
 ### Added to __init__.py

@@ -1,0 +1,5 @@
+[run]
+omit =
+    src/coyaml/_internal/_config.py
+
+

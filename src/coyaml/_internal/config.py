@@ -16,9 +16,9 @@ TEMPLATE_PATTERN = re.compile(r'\${{\s*(\w+):(.+?)}}')
 
 class YSettings(YNode):
     """
-    Основной контейнер настроек.
-    Хранит агрегированные данные из нескольких источников (:class:`YSource`).
-    Наследуется от :class:`YNode`, поэтому поддерживает точечную нотацию и метод ``to``.
+    Main settings container.
+    Stores aggregated data from multiple sources (:class:`YSource`).
+    Inherits from :class:`YNode`, thus supports dot notation and the ``to`` method.
     """
 
     def __init__(self, initial: dict[str, Any] | None = None):
@@ -26,7 +26,7 @@ class YSettings(YNode):
         self._sources: list[YSource] = []
 
     def add_source(self, source: YSource) -> 'YSettings':
-        """Загрузить данные из источника и слить в текущий объект."""
+        """Load data from the source and merge it into the current object."""
         data = source.load()
         deep_merge(self._data, data)
         self._sources.append(source)

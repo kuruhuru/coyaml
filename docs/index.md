@@ -1,8 +1,7 @@
 # Coyaml
 
-Coyaml is an intuitive Python library designed to simplify YAML configuration management. It lets you split your configurations into smaller files, embed environment variables, and reuse configuration nodes—keeping your settings organized, maintainable, and scalable.
-
-Developed with practical insights from real-world projects, Coyaml is ideal for Python developers who require flexible, powerful, and simple configuration handling.
+Coyaml is a pragmatic Python library for YAML configuration that stays simple for small apps and scales to complex setups.
+It gives you clean dot access, powerful templates, zero‑boilerplate injection, and smooth Pydantic interop — without a heavy framework.
 
 ![Tests](https://github.com/kuruhuru/coyaml/actions/workflows/ci-main.yml/badge.svg)
 ![Coverage](https://img.shields.io/coveralls/github/kuruhuru/coyaml.svg?branch=main)
@@ -10,25 +9,45 @@ Developed with practical insights from real-world projects, Coyaml is ideal for 
 ![PyPI](https://img.shields.io/pypi/v/coyaml.svg)
 ![PyPI - License](https://img.shields.io/pypi/l/coyaml)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/coyaml)
+
 ---
-## Why Use Coyaml?
 
-Coyaml simplifies common YAML management tasks:
+## Why Coyaml
 
-* **Dot Notation Access**: Easily access nested configuration (`config.section.option`).
-* **Pydantic Integration**: Automatic validation and type safety for your settings.
-* **Environment Variables**: Direct integration of OS or `.env` variables, with defaults.
-* **External File & YAML Inclusion**: Embed file contents and additional YAML files seamlessly.
-* **Reusable Nodes**: Reference and reuse YAML configuration sections dynamically.
-* **Template Engine**: `${{ env:VAR }}`, `${{ file:path }}`, `${{ config:node }}`, `${{ yaml:file }}` placeholders resolved automatically.
-* **Dependency Injection**: Drop-in `@coyaml` decorator + `typing.Annotated`/`YResource` for zero-boilerplate parameter injection.
+- **Simple dot access**: `cfg.section.option` with safe nested creation
+- **Templates that work**: `${{ env:VAR }}`, `${{ file:path }}`, `${{ config:node }}`, `${{ yaml:file }}`
+- **Pydantic interop**: convert any node to models via `.to(Model)`
+- **Zero‑boilerplate DI**: `@coyaml` + `Annotated[..., YResource]` injects values into any function
+- **Smart search**: inject by parameter name, optionally constrained by glob masks (`*`, `**`) with deterministic behavior
+- **Predictable merge**: dicts deep‑merge, lists are replaced (documented and explicit)
+
+## 10‑second example
+
+```python
+from typing import Annotated
+from coyaml import YSettings, YRegistry, YResource, coyaml
+from coyaml.sources.yaml import YamlFileSource
+
+# Load once
+cfg = YSettings().add_source(YamlFileSource('config.yaml'))
+cfg.resolve_templates()
+YRegistry.set_config(cfg)
+
+# Inject by name, constrained to debug subtree
+@coyaml(mask='debug.**')
+def connect(user: Annotated[str, YResource()], url: Annotated[str, YResource('debug.db.url')]):
+    print(user, url)
+
+connect()
+```
+
+- Works with environment variables, files, and external YAML includes
+- Deterministic and helpful errors (missing, ambiguous, invalid templates)
 
 ## Quick Links
 
 - [Installation](1_installation.md)
 - [Quickstart](2_quickstart.md)
-<!-- - [Configuration & Templates](configuration.md) -->
-<!-- - [Tutorials](tutorials/first-steps.md) -->
+- [Tutorials: Basic](tutorials/01_basic.md) · [Templates](tutorials/02_templates.md) · [Injection](tutorials/03_injection.md) · [Merging](tutorials/04_merging.md) · [Registry](tutorials/05_registry.md)
 - [API Reference](api/modules.md)
-<!-- - [Contributing](contributing.md) -->
 - [Changelog](CHANGELOG.md)
