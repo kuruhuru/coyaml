@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 import pytest
 
 from coyaml import YRegistry
@@ -22,6 +24,8 @@ def test_registry_uri_helpers_with_registered_scheme() -> None:
     YRegistry.register_scheme('yaml', YamlFileSource)
 
     # create from a single uri
+    os.environ['DB_USER'] = 'test_user'
+    os.environ['DB_PASSWORD'] = 'test_password'  # noqa: S105
     cfg = YRegistry.create_from_uri('yaml://tests/config/config.yaml')
     # last source wins in create_from_uri_list; here it's a single yaml
     assert cfg['index'] == 9
