@@ -6,10 +6,10 @@ import inspect
 from functools import wraps
 from typing import Annotated, Any, get_args, get_origin, get_type_hints
 
-try:  # Python 3.10 compatibility for include_extras
+try:  # Prefer typing_extensions on 3.10 to preserve Annotated extras
     from typing import get_type_hints as get_type_hints_extras
 except Exception:  # pragma: no cover
-    get_type_hints_extras = get_type_hints  # fallback
+    get_type_hints_extras = get_type_hints  # fallback to stdlib
 
 from pydantic import BaseModel
 
@@ -57,9 +57,11 @@ def coyaml(_func=None, *, mask: str | list[str] | None = None, unique: bool = Tr
                 # Annotated metadata (only base type is returned). If so, try to
                 # fetch the raw annotation directly from the signature.
                 if hint is None or get_origin(hint) is not Annotated:
-                    raw_ann = _param.annotation
-                    if get_origin(raw_ann) is Annotated:
-                        hint = raw_ann
+                    # Fallback 1: evaluated annotations (handles future annotations)
+                    evaluated = inspect.get_annotations(func, eval_str=True)
+                    raw = evaluated.get(name, _param.annotation)
+                    if get_origin(raw) is Annotated:
+                        hint = raw
 
                 if hint is None:
                     continue
