@@ -18,15 +18,15 @@ Developed with practical insights from real-world projects, Coyaml is ideal for 
 
 ---
 
-## Why Use Coyaml?
+## Why Coyaml?
 
-Coyaml simplifies common YAML management tasks:
+Coyaml simplifies common YAML tasks and stays pragmatic:
 
-* **Dot Notation Access**: Easily access nested configuration (`config.section.option`).
-* **Pydantic Integration**: Automatic validation and type safety for your settings.
-* **Environment Variables**: Direct integration of OS or `.env` variables, with defaults.
-* **External File & YAML Inclusion**: Embed file contents and additional YAML files seamlessly.
-* **Reusable Nodes**: Reference and reuse YAML configuration sections dynamically.
+* **Dot notation access**: `cfg.section.option`
+* **Templates that work**: `${{ env:VAR }}`, `${{ file:path }}`, `${{ config:node }}`, `${{ yaml:file }}`
+* **Pydantic interop**: convert any node to models via `.to(Model)`
+* **Zero‑boilerplate DI**: `@coyaml` + `Annotated[..., YResource]` injects values into any function
+* **Smart search**: inject by parameter name, optionally constrained by glob masks (`*`, `**`)
 
 ## Quick Start
 
@@ -39,14 +39,16 @@ pip install coyaml
 Load and resolve YAML configurations:
 
 ```python
-from coyaml import YConfig
+from coyaml import YSettings
+from coyaml.sources.yaml import YamlFileSource
+from coyaml.sources.env import EnvFileSource
 
-config = (
-    YConfig()
-    .add_yaml_source('config.yaml')
-    .add_env_source()
+cfg = (
+    YSettings()
+    .add_source(YamlFileSource('config.yaml'))
+    .add_source(EnvFileSource('.env'))
 )
-config.resolve_templates() # is necessary only when using template placeholders within the YAML configuration.
+cfg.resolve_templates()
 ```
 
 ## Example YAML Configuration
@@ -66,23 +68,23 @@ app:
   extra_settings: ${{ yaml:tests/config/extra.yaml }}
 ```
 
-### Using Configurations in Code
+### Using configurations in code
 
 ```python
 # Access nested configuration
-print(config.debug.db.url)
+print(cfg.debug.db.url)
 
 # Access environment variables with defaults
-print(config.debug.db.password)
+print(cfg.debug.db.password)
 
 # Access embedded file content
-print(config.debug.db.init_script)
+print(cfg.debug.db.init_script)
 
 # Access YAML-included configurations
-print(config.app.extra_settings)
+print(cfg.app.extra_settings)
 
 # Modify configuration dynamically
-config.index = 10
+cfg.index = 10
 
 # Validate configuration via Pydantic
 from pydantic import BaseModel
@@ -91,11 +93,33 @@ class AppConfig(BaseModel):
     db_url: str
     extra_settings: dict
 
-app_config = config.app.to(AppConfig)
+app_config = cfg.app.to(AppConfig)
 print(app_config)
 ```
 
-Coyaml resolves references automatically, ensuring your configurations remain consistent and adaptable.
+Coyaml resolves templates and references automatically, keeping configs consistent and adaptable.
+
+### Zero‑boilerplate injection
+
+```python
+from typing import Annotated
+from coyaml import YRegistry, YResource, coyaml
+
+YRegistry.set_config(cfg)
+
+@coyaml(mask='debug.**')
+def connect(user: Annotated[str | None, YResource()] = None) -> str | None:
+    return user  # found by name within the masked subtree
+
+print(connect())
+```
+
+### Quick links
+
+- Docs: https://coyaml.readthedocs.io
+- Tutorials: Basic · Templates · Injection · Merging · Registry
+- Concepts: YSettings · YNode · Templates · Injection
+- API: https://coyaml.readthedocs.io/en/latest/api/modules/
 
 For detailed documentation, more examples, and a complete API reference, visit [Coyaml Documentation](https://coyaml.readthedocs.io).
 

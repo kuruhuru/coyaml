@@ -12,6 +12,7 @@ plugins:
 markdown_extensions:
   - pymdownx.superfences
   - pymdownx.highlight
+  - pymdownx.snippets
 extra_css:
   - assets/extra.css
 
@@ -19,5 +20,36 @@ nav:
   - About Coyaml: index.md
   - Installation: 1_installation.md
   - Quickstart: 2_quickstart.md
+  - Examples: 3_examples.md
+  - Tutorials:
+      - Overview: tutorials/index.md
+      - Basic usage: tutorials/01_basic.md
+      - Templates: tutorials/02_templates.md
+      - Injection: tutorials/03_injection.md
+      - Merging: tutorials/04_merging.md
+      - Registry: tutorials/05_registry.md
+  - Concepts:
+      - YSettings: concepts/ysettings.md
+      - YNode: concepts/ynode.md
+      - Templates: concepts/templates.md
+      - Sources: concepts/sources.md
+      - Merge: concepts/merge.md
+      - Registry: concepts/registry.md
+      - Injection: concepts/injection.md
+  - Scenarios:
+      - 12-factor: scenarios/12factor.md
+      - Overlays: scenarios/overlays.md
+      - DI in apps: scenarios/di_in_apps.md
+      - Splitting configs: scenarios/splitting_configs.md
+      - Testing: scenarios/testing.md
+      - Frameworks: scenarios/frameworks.md
+  - Cookbook: cookbook/index.md
+  - Reference:
+      - Errors: errors.md
+      - Security: security.md
+      - Performance: performance.md
+      - Comparison: comparison.md
+      - Migration: migration.md
+      - FAQ: faq.md
   - API Reference: api/modules.md
   - Changelog: CHANGELOG.md
