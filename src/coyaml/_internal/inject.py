@@ -6,6 +6,11 @@ import inspect
 from functools import wraps
 from typing import Annotated, Any, get_args, get_origin, get_type_hints
 
+try:  # Python 3.10 compatibility for include_extras
+    from typing import get_type_hints as get_type_hints_extras
+except Exception:  # pragma: no cover
+    get_type_hints_extras = get_type_hints  # fallback
+
 from pydantic import BaseModel
 
 from coyaml._internal.node import YNode
@@ -36,7 +41,8 @@ def coyaml(_func=None, *, mask: str | list[str] | None = None, unique: bool = Tr
     decorator_unique = unique
 
     def _decorate(func: Any) -> Any:
-        hints = get_type_hints(func, include_extras=True)
+        # Use typing_extensions.get_type_hints when available to preserve Annotated extras on 3.10
+        hints = get_type_hints_extras(func, include_extras=True)
         sig = inspect.signature(func)
 
         @wraps(func)
