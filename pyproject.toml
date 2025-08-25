@@ -1,6 +1,6 @@
 [project]
 name = "coyaml"
-version = "0.10.2"
+version = "0.10.3"
 description = "Yaml configuration library for python"
 authors = [{ name = "Petr Matyukov", email = "kuruhuru@gmail.com" }]
 
@@ -31,6 +31,7 @@ include = [
     "src/coyaml/__init__.pyi",
     "src/coyaml/**/*.pyi",
     "src/coyaml/py.typed",
+    "src/coyaml/**/*.py",
 ]
 
 [tool.hatch.build.targets.sdist]

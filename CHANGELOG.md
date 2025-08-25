@@ -1,5 +1,12 @@
 # Changelog
 
+## [v0.10.3] - 2025-01-27
+
+### Fixed
+- Fixed GitHub Actions build process: changed from `uv build` to `uv build --wheel` and `uv build --sdist` for direct building
+- Added build verification steps in CI/CD to check wheel and sdist contents
+- Ensured both wheel and source distributions contain all Python files
+
 ## [v0.10.2] - 2025-01-27
 
 ### Fixed
