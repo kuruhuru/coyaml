@@ -39,7 +39,12 @@ jobs:
 
       - name: Build distributions
         run: |
-          uv build
+          uv build --wheel
+          uv build --sdist
+          echo "Checking wheel contents:"
+          unzip -l dist/*.whl
+          echo "Checking sdist contents:"
+          tar -tzf dist/*.tar.gz
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
