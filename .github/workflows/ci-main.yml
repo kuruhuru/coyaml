@@ -43,6 +43,15 @@ jobs:
         run: |
           uv run pytest --cov=coyaml --cov-report=lcov:coverage/lcov.info
 
+      - name: Test build
+        run: |
+          uv build --wheel
+          uv build --sdist
+          echo "Checking wheel contents:"
+          unzip -l dist/*.whl
+          echo "Checking sdist contents:"
+          tar -tzf dist/*.tar.gz
+
       - name: Upload coverage to Coveralls
         uses: coverallsapp/github-action@v2
         with:
