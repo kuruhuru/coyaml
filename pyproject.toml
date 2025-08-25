@@ -1,6 +1,6 @@
 [project]
 name = "coyaml"
-version = "0.10.0"
+version = "0.10.1"
 description = "Yaml configuration library for python"
 authors = [{ name = "Petr Matyukov", email = "kuruhuru@gmail.com" }]
 
@@ -27,6 +27,18 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/coyaml"]
+include = [
+    "src/coyaml/__init__.pyi",
+    "src/coyaml/**/*.pyi",
+    "src/coyaml/py.typed",
+]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/coyaml/__init__.pyi",
+    "src/coyaml/**/*.pyi",
+    "src/coyaml/py.typed",
+]
 
 
 [tool.uv]

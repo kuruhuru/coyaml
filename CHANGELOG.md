@@ -1,5 +1,12 @@
 # Changelog
 
+## [v0.10.1] - 2025-08-25
+
+### Fixed
+- Added PEP 561 typing package support: included `py.typed` and package-level stubs `coyaml/__init__.pyi` with decorator overloads.
+- Fixed Pyright false positive: `Argument missing for parameter "func"` for `@coyaml(...)` usage via proper overloads and moving stubs to package root.
+- Packaging config updated to include `.pyi` and `py.typed` into wheel and sdist.
+
 ## [v0.10.0] - 2025-08-23
 
 ### Added
