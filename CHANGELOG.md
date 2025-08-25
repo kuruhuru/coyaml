@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.10.2] - 2025-01-27
+
+### Fixed
+- Fixed source distribution packaging: added missing Python files to tar.gz archive
+- Added `packages = ["src/coyaml"]` and `"src/coyaml/**/*.py"` to sdist configuration
+
 ## [v0.10.1] - 2025-08-25
 
 ### Fixed
