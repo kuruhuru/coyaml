@@ -1,5 +1,21 @@
 # Changelog
 
+## [v0.11.0] - 2025-09-05
+
+### Added
+- Universal typed conversion via `YNode.to()` and new `YList.to()` using Pydantic v2 `TypeAdapter`.
+- Collection targets supported: `dict[str, BModel]`, `dict[str, bool]`, `list[BModel]`, and nested variants.
+- DI now auto-converts `YNode|YList` to annotated types including `list[T]`, `dict[K,V]`, `Optional`, `Union`.
+- Relative path lookup in `YResource(path)`: suffix-based search constrained by decorator `mask`; absolute paths via `^` prefix.
+- Examples: `examples/conversion/01_to_collections.py`, `examples/injection/26_inject_collections.py`, `examples/injection/27_inject_relative_path.py`.
+
+### Changed
+- Project oriented strictly to Pydantic v2 (`pydantic>=2,<3`).
+- `YNode` now returns `YList` for list nodes to expose `.to()`.
+
+### Fixed
+- Robust conversion of lists containing `YNode` elements by unwrapping to plain dicts before validation.
+
 ## [v0.10.3] - 2025-01-27
 
 ### Fixed

@@ -110,3 +110,44 @@ def find_by_name(
         if _match_any_mask(dotted, masks):
             results.append((dotted, value))
     return results
+
+
+def find_by_path_suffix(
+    data: dict[str, Any],
+    suffix: str,
+    masks: Sequence[str] | None = None,
+) -> list[tuple[str, Any]]:
+    """Find all values whose dotted path ends with the given ``suffix``.
+
+    Examples:
+      - suffix="a.b.c" matches "root.x.a.b.c" and "a.b.c"
+      - masks, if provided, filter candidates by full dotted path first
+
+    Returns list of tuples (full dotted path, value). Order is deterministic
+    (pre-order of the original structure).
+    """
+    # Normalize suffix into segments and strip leading/trailing dots
+    trimmed = suffix.strip('.')
+    suffix_segments = trimmed.split('.') if trimmed else []
+
+    results: list[tuple[str, Any]] = []
+    for path_list, value in _iter_tree(data):
+        if not path_list:
+            continue
+        dotted = _dotted(path_list)
+        if not _match_any_mask(dotted, masks):
+            continue
+        # Fast path: if suffix equals full path
+        if dotted.endswith(trimmed):
+            # Validate proper segment suffix match (not partial segment)
+            if not trimmed:
+                continue
+            # Ensure segment alignment: compare as segments to avoid partial matches
+            if len(suffix_segments) <= len(path_list) and path_list[-len(suffix_segments) :] == suffix_segments:
+                results.append((dotted, value))
+                continue
+        else:
+            # If endwith failed (e.g., due to segment boundary), fallback to segment comparison
+            if len(suffix_segments) <= len(path_list) and path_list[-len(suffix_segments) :] == suffix_segments:
+                results.append((dotted, value))
+    return results

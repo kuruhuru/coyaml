@@ -11,11 +11,10 @@ try:  # Prefer typing_extensions on 3.10 to preserve Annotated extras
 except Exception:  # pragma: no cover
     get_type_hints_extras = get_type_hints  # fallback to stdlib
 
-from pydantic import BaseModel
 
-from coyaml._internal.node import YNode
+from coyaml._internal.node import YList, YNode
 from coyaml._internal.registry import YRegistry
-from coyaml._internal.search import _dotted, _iter_tree, find_by_name
+from coyaml._internal.search import _dotted, _iter_tree, find_by_name, find_by_path_suffix
 
 
 class YResource:
@@ -89,15 +88,15 @@ def coyaml(_func=None, *, mask: str | list[str] | None = None, unique: bool = Tr
                                         bound.arguments[name] = None
                                         break
                                     # Gather a few similar paths containing the parameter name
-                                    similar: list[str] = []
+                                    similar_by_name: list[str] = []
                                     for segs, _value in _iter_tree(cfg_dict):
                                         if segs and name in segs:
-                                            similar.append(_dotted(segs))
-                                            if len(similar) >= 5:
+                                            similar_by_name.append(_dotted(segs))
+                                            if len(similar_by_name) >= 5:
                                                 break
                                     details = f'masks={masks!r}'
-                                    if similar:
-                                        details += '. Similar: ' + ', '.join(similar)
+                                    if similar_by_name:
+                                        details += '. Similar: ' + ', '.join(similar_by_name)
                                     raise KeyError(f"Key by name '{name}' not found ({details})")
 
                                 if len(matches) > 1 and decorator_unique:
@@ -114,28 +113,66 @@ def coyaml(_func=None, *, mask: str | list[str] | None = None, unique: bool = Tr
                                 if isinstance(value, dict):
                                     value = YNode(value)
                                 elif isinstance(value, list):
-                                    value = [YNode(v) if isinstance(v, dict) else v for v in value]
+                                    value = YList([YNode(v) if isinstance(v, dict) else v for v in value])
                             else:
-                                value = cfg[path]
-                            if isinstance(value, YNode):
-                                # If the value is a YNode but the annotation expects some
-                                # other type, convert using YNode.to(). We skip conversion
-                                # when the annotation explicitly includes YNode itself
-                                # (so users can opt-out of automatic casting).
-                                candidates = get_args(typ) if get_args(typ) else (typ,)
-
-                                # When annotation allows YNode, leave as-is
-                                if YNode in candidates or typ is YNode:
-                                    pass  # не конвертируем
+                                # If path is provided, support relative suffix lookup unless absolute
+                                masks = (
+                                    [decorator_mask] if isinstance(decorator_mask, str) else (decorator_mask or None)
+                                )
+                                if path.startswith('^'):
+                                    absolute = path[1:]
+                                    value = cfg[absolute]
                                 else:
-                                    # Find the first candidate type that is subclass(BaseModel) for conversion
-                                    target_type = next(
-                                        (c for c in candidates if isinstance(c, type) and issubclass(c, BaseModel)),
-                                        None,
-                                    )
+                                    cfg_dict = cfg.to_dict()
+                                    matches = find_by_path_suffix(cfg_dict, path, masks)
+                                    if not matches:
+                                        # Handle Optional/default None
+                                        is_optional = False
+                                        args = get_args(typ)
+                                        if args and type(None) in args:
+                                            is_optional = True
+                                        default_is_none = (
+                                            name in sig.parameters and sig.parameters[name].default is None
+                                        )
+                                        if is_optional or default_is_none:
+                                            bound.arguments[name] = None
+                                            break
+                                        # Diagnostics with similar paths containing the last segment of suffix
+                                        segs = path.split('.')
+                                        last = segs[-1] if segs else ''
+                                        cfg_dict2 = cfg.to_dict()
+                                        similar_by_suffix: list[str] = []
+                                        for seg_path, _value in _iter_tree(cfg_dict2):
+                                            if seg_path and last in seg_path:
+                                                similar_by_suffix.append(_dotted(seg_path))
+                                                if len(similar_by_suffix) >= 5:
+                                                    break
+                                        details = f"path='{path}', masks={masks!r}"
+                                        if similar_by_suffix:
+                                            details += '. Similar: ' + ', '.join(similar_by_suffix)
+                                        raise KeyError(f'Key by relative path suffix not found ({details})')
 
-                                    if target_type is not None:
-                                        value = value.to(target_type)
+                                    if len(matches) > 1 and decorator_unique:
+                                        listed = ', '.join(p for p, _ in matches[:5])
+                                        more = '...' if len(matches) > 5 else ''
+                                        raise KeyError(
+                                            f"Ambiguous relative path suffix '{path}' (masks={masks!r}): {listed}{more}. "
+                                            f'Specify absolute path (^prefix) or restrict mask.'
+                                        )
+
+                                    found_path, raw_value = matches[0]
+                                    value = raw_value
+                                    if isinstance(value, dict):
+                                        value = YNode(value)
+                                    elif isinstance(value, list):
+                                        value = YList([YNode(v) if isinstance(v, dict) else v for v in value])
+                            if isinstance(value, YNode | YList):
+                                # Конвертируем во всё, что не включает YNode
+                                candidates = get_args(typ) if get_args(typ) else (typ,)
+                                if YNode in candidates or typ is YNode:
+                                    pass
+                                else:
+                                    value = value.to(typ)
                             bound.arguments[name] = value
                             break
             return func(*bound.args, **bound.kwargs)

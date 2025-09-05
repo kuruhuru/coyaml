@@ -22,9 +22,10 @@ Usage example:
 """
 
 # Legacy imports for backward compatibility
+from coyaml._internal import inject as _inject
 from coyaml._internal._config import YConfig, YConfigFactory
 from coyaml._internal.config import YSettings
-from coyaml._internal.inject import YResource, coyaml
+from coyaml._internal.inject import YResource
 from coyaml._internal.node import YNode
 from coyaml._internal.registry import YRegistry
 from coyaml.sources.base import YSource
@@ -45,3 +46,8 @@ __all__ = [
     'coyaml',
     'YResource',
 ]
+
+
+def coyaml(_func=None, *, mask: str | list[str] | None = None, unique: bool = True):  # type: ignore
+    """Public shim for the internal decorator to make docs and typing happy."""
+    return _inject.coyaml(_func, mask=mask, unique=unique)
