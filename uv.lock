@@ -147,7 +147,7 @@ toml = [
 
 [[package]]
 name = "coyaml"
-version = "0.10.0"
+version = "0.11.0"
 source = { editable = "." }
 dependencies = [
     { name = "pydantic" },
@@ -172,7 +172,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "pydantic" },
+    { name = "pydantic", specifier = ">=2,<3" },
     { name = "python-dotenv", specifier = ">=1.1.0" },
     { name = "types-pyyaml", specifier = ">=6.0.12.20240311" },
 ]

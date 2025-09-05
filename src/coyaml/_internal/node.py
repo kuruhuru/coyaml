@@ -6,14 +6,35 @@ from typing import (
     TypeVar,
 )
 
-from pydantic import BaseModel
+from pydantic import TypeAdapter
 
 # Pattern for finding variable names
 TEMPLATE_PATTERN = re.compile(r'\${{\s*(\w+):(.+?)}}')
 
 
 # Define type variable
-T = TypeVar('T', bound='BaseModel')
+T = TypeVar('T')
+
+
+class YList(list[Any]):
+    """
+    List wrapper that behaves like a regular list but also supports `.to()`
+    conversion using Pydantic validation for typed targets (e.g. list[Model],
+    list[int], dict[str, Model] if applied to list of dicts via YNode.to()).
+    """
+
+    def to(self, target_type: type[T] | str) -> T:
+        if isinstance(target_type, str):
+            module_name, class_name = target_type.rsplit('.', 1)
+            module = importlib.import_module(module_name)
+            model_type: type[T] = getattr(module, class_name)
+        else:
+            model_type = target_type
+
+        # Unwrap nested YNode elements back to plain python values for validation
+        data: Any = [item._data if isinstance(item, YNode) else item for item in self]
+        adapter = TypeAdapter(model_type)
+        return adapter.validate_python(data)
 
 
 class YNode:
@@ -68,7 +89,7 @@ class YNode:
         if isinstance(value, dict):
             return YNode(value)
         elif isinstance(value, list):
-            return [YNode(v) if isinstance(v, dict) else v for v in value]
+            return YList([YNode(v) if isinstance(v, dict) else v for v in value])
         return value
 
     def __getitem__(self, item: str) -> Any:
@@ -90,7 +111,7 @@ class YNode:
         if isinstance(value, dict):
             return YNode(value)
         elif isinstance(value, list):
-            return [YNode(v) if isinstance(v, dict) else v for v in value]
+            return YList([YNode(v) if isinstance(v, dict) else v for v in value])
         return value
 
     def __setattr__(self, key: str, value: Any) -> None:
@@ -136,7 +157,10 @@ class YNode:
             model_type: type[T] = getattr(module, class_name)
         else:
             model_type = model
-        return model_type(**self._data)
+
+        data: Any = self._data
+        adapter = TypeAdapter(model_type)
+        return adapter.validate_python(data)
 
     def _convert_value(self, value: Any) -> Any:
         """
@@ -148,7 +172,7 @@ class YNode:
         if isinstance(value, dict):
             return YNode(value)
         elif isinstance(value, list):
-            return [YNode(item) if isinstance(item, dict) else item for item in value]
+            return YList([YNode(item) if isinstance(item, dict) else item for item in value])
         return value
 
     def __eq__(self, other: Any) -> bool:
